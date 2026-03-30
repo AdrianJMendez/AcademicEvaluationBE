@@ -58,7 +58,7 @@ StudentCareer.init(
   {
     sequelize,
     modelName: 'StudentCareer',
-    tableName: 'tblStudentCareer',
+    tableName: 'tblStudentCareers',
     schema: 'users',
     timestamps: false,
     indexes: [{
