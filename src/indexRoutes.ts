@@ -3,6 +3,7 @@ import './models/associations';
 import usersRoutes from './routes/users/usersRoutes';
 import authRoutes from './routes/users/authRoutes';
 import publicRoutes from './routes/publicRoutes';
+import careerRoutes from './routes/academy/careerRoutes';
 
 import { verifyToken } from './utils/jwtService';
 
@@ -12,8 +13,10 @@ index.use('/auth', authRoutes);
 
 index.use('/public', publicRoutes);
 
-index.use(verifyToken);
+//index.use(verifyToken);
 
 index.use('/users', usersRoutes);
+
+index.use('/academy',careerRoutes)
 
 export default index;
