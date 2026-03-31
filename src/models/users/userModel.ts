@@ -39,6 +39,10 @@ class User extends Model {
     return this.getDataValue("isActive");
   }
 
+  get isVerified(): boolean {
+    return this.getDataValue("isVerified");
+  }
+
 }
 
 User.init(
@@ -72,6 +76,11 @@ User.init(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
     lastLoginAt: {
       type: DataTypes.DATE,

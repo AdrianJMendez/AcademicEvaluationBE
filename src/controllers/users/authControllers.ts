@@ -38,47 +38,47 @@ export const registerUser = async (req: Request, res: Response) => {
     }
 }
 
-// export const resendVerification = async (req: Request, res: Response) => {
-//     try {
-//         const params = formatRequest(req);
+export const resendVerification = async (req: Request, res: Response) => {
+    try {
+        const params = formatRequest(req);
 
-//         const result = await AuthService.resendVerification(params.email);
+        const result = await AuthService.resendVerification(params.email);
 
-//         if (result instanceof Error) {
-//             return JsonResponse.error(500, result.message);
-//         }
+        if (result instanceof Error) {
+            return JsonResponse.error(500, result.message);
+        }
 
-//         res.status(result.getStatus()).json(result);
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
-//     }
-// }
+        res.status(result.getStatus()).json(result);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
+    }
+}
 
-// export const verifyEmailCode = async (req: Request, res: Response) => {
-//     try {
-//         const params = formatRequest(req);
+export const verifyEmailCode = async (req: Request, res: Response) => {
+    try {
+        const params = formatRequest(req);
 
-//         const result = await AuthService.verifyEmailCode(params.code, params.email);
+        const result = await AuthService.verifyEmailCode(params.code, params.email);
 
-//         res.status(result.getStatus()).json(result);
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
-//     }
-// }
+        res.status(result.getStatus()).json(result);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
+    }
+}
 
-// export const verifyEmailTest = async (req: Request, res: Response) => {
-//     try {
-//         const params = formatRequest(req);
+export const verifyEmailTest = async (req: Request, res: Response) => {
+    try {
+        const params = formatRequest(req);
 
-//         const result = await AuthService.testVerifyEmail(params.email);
+        const result = await AuthService.testVerifyEmail(params.email);
 
-//         res.status(result.getStatus()).json(result);
-//     } catch (error) {
-//         console.log(error);
-//         return res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
-//     }
-// }
+        res.status(result.getStatus()).json(result);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
+    }
+}
 
 
