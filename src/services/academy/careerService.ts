@@ -41,6 +41,40 @@ class CareerService {
         return JsonResponse.success(data.Careers, "La petición ha sido un éxito.");
     }
 
+    static async getSubjectsByCareer(idCareer:number): Promise<JsonResponse> {
+
+        const career = await Career.findByPk(idCareer);
+
+        if(!career)
+            return JsonResponse.error(400,"No se ha encontrado la carrera");
+
+        const data = await Subject.findAll({
+            include : [
+                {model: Career, required: true, where:{
+                    idCareer: career.idCareer
+                }},
+                {
+                    model: SubjectPrerequisite,
+                    as: 'Prerequisites',
+                    required: false,
+                    include: [
+                        {
+                            model: Subject,
+                            as: 'PrerequisiteSubject',
+                            required: false,
+                        }
+                    ]
+                }
+            ]
+        });
+
+        if(!data){
+            return JsonResponse.error(400, 'No se han encontrado datos.');
+        }
+
+        return JsonResponse.success(data, "La petición ha sido un éxito.");
+    }
+
     static async getCareerPlanById(idCareer: number) {
 
         const career = await Career.findOne({
@@ -73,6 +107,8 @@ class CareerService {
 
         return JsonResponse.success(career, 'Plan académico obtenido con éxito.');
     }
+
+
 }
 
 export default CareerService;

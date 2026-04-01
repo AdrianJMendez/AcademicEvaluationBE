@@ -27,6 +27,21 @@ export const getCareersForStudent = async (req: Request, res: Response) => {
     }
 }
 
+export const getSubjectsByCareer = async (req: Request, res: Response) => {
+    try {
+
+        const params = formatRequest(req);
+
+        const idCareer = parseInt(params.idCareer);
+
+        const result = await CareerService.getSubjectsByCareer(idCareer);
+        
+        res.status(result.getStatus()).json(result);
+    } catch (err) {
+        res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
+    }
+}
+
 export const getCareerPlanById = async (req: Request, res: Response) => {
     try {
 

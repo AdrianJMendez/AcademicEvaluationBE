@@ -17,6 +17,10 @@ class AuthService {
     static async loginUser(email: string, password: string) {
         
         const user = await User.findOne({
+            include: [
+                {model:Student},
+                {model:Employee}
+            ],
             where: {
                 email: email,
                 password: password
@@ -38,7 +42,9 @@ class AuthService {
             name: user.name,
             isActive : user.isActive,
             isVerified : user.isVerified,
-            role : user.idRole == 1 ? 'student' : user.idRole == 2 ? 'employee' : 'admin'
+            role : user.idRole == 1 ? 'student' : user.idRole == 2 ? 'employee' : 'admin',
+            accountNumber : user.Student?.accountNumber,
+            employeeCode : user.Employee?.employeeCode
         }
         
         return JsonResponse.success(data,"La petición se ha realizado con éxito.");
