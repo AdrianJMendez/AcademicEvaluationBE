@@ -3,9 +3,11 @@ import Career from "../../models/academy/careerModel";
 import Subject from "../../models/academy/subjectModel";
 import SubjectPrerequisite from "../../models/academy/subjectPrerequisiteModel";
 import Student from "../../models/users/studentModel";
+import User from "../../models/users/userModel";
 
 class CareerService {
 
+    ////PRIMER SERVICIO DE PRUEBA PARA LAS RELACIONES MUCHOS A MUCHOS NO TIENE UTILIDAD REAL
     static async getCareersByStudentId() {
 
         const data = await Student.findAll({
@@ -19,6 +21,24 @@ class CareerService {
         }
 
         return JsonResponse.success(data, "La petición ha sido un éxito.");
+    }
+
+    static async getCareersForStudent(user: User): Promise<JsonResponse> {
+
+        const data = await Student.findOne({
+            include : [
+                {model: Career, required: true}
+            ],
+            where :{
+                idUser : user.idUser
+            }
+        });
+
+        if(!data?.Careers){
+            return JsonResponse.error(400, 'No se han encontrado datos.');
+        }
+
+        return JsonResponse.success(data.Careers, "La petición ha sido un éxito.");
     }
 
     static async getCareerPlanById(idCareer: number) {
