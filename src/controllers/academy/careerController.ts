@@ -12,3 +12,18 @@ export const getCareersByStudentId = async (req: Request, res: Response) => {
         res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
     }
 }
+
+export const getCareerPlanById = async (req: Request, res: Response) => {
+    try {
+        const idCareer = Number(req.params.id);
+
+        if (Number.isNaN(idCareer) || idCareer <= 0) {
+            return res.status(400).json(JsonResponse.error(400, 'El id de carrera no es válido.'));
+        }
+
+        const result = await CareerService.getCareerPlanById(idCareer);
+        res.status(result.getStatus()).json(result);
+    } catch (err) {
+        res.status(500).json(JsonResponse.error(500, "Error Interno del Servidor."));
+    }
+}
