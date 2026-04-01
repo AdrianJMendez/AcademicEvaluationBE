@@ -12,3 +12,13 @@ export const getRolesForRegistration = async (req: Request, res: Response) => {
         res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
     }
 }
+
+export const getCareersForRegistration = async (req: Request, res: Response) => {
+    try {
+        const result = await PublicService.getCareersForRegistration();
+        
+        res.status(result.getStatus()).json(result);
+    } catch (err) {
+        res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
+    }
+}
