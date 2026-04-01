@@ -36,8 +36,8 @@ class Subject extends Model {
     return this.getDataValue("description");
   }
 
-  get isElective(): boolean {
-    return this.getDataValue("isElective");
+  get isOptative(): boolean {
+    return this.getDataValue("isOptative");
   }
 
 }
@@ -77,7 +77,7 @@ Subject.init(
       type: DataTypes.STRING('MAX'),
       allowNull: true,
     },
-    isElective: {
+    isOptative: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
