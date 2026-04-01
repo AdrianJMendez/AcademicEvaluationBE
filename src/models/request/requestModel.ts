@@ -2,7 +2,7 @@ import { BelongsToGetAssociationMixin, DataTypes, HasManyGetAssociationsMixin, M
 import sequelize from '../../utils/connection';
 import StudentCareer from '../users/studentCareerModel';
 import Employee from '../users/employeeModel';
-import RequestStatus from './requestStatusModel';
+import Status from '../asset/statusModel';
 import Student from '../users/studentModel';
 
 class Request extends Model {
@@ -13,8 +13,8 @@ class Request extends Model {
   declare getEmployeeReviewer: BelongsToGetAssociationMixin<Employee>;
   declare EmployeeReviewer: Employee;
 
-  declare getStatus: BelongsToGetAssociationMixin<RequestStatus>;
-  declare Status : RequestStatus;
+  declare getStatus: BelongsToGetAssociationMixin<Status>;
+  declare Status : Status;
 
   async getStudent() : Promise<Student | null> {
     const studentCareer = await StudentCareer.findByPk(this.idStudentCareer);
@@ -29,8 +29,8 @@ class Request extends Model {
     return this.getDataValue("idStudentCareer");
   }
 
-  get idRequestStatus(): number {
-    return this.getDataValue("idRequestStatus");
+  get idStatus(): number {
+    return this.getDataValue("idStatus");
   }
 
   get submittedAt(): Date {
@@ -74,12 +74,12 @@ Request.init(
         key: 'idStudentCareer',
       },
     },
-    idRequestStatus: {
+    idStatus: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "RequestStatus",
-        key: 'idRequestStatus',
+        model: "Status",
+        key: 'idStatus',
       },
     },
     submittedAt: {

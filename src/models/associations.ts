@@ -6,7 +6,6 @@ import Career from "./academy/careerModel";
 import Subject from "./academy/subjectModel";
 import SubjectPrerequisite from "./academy/subjectPrerequisiteModel";
 import StudentCareer from "./users/studentCareerModel";
-import RequestStatus from "./request/requestStatusModel";
 import DiscrepancyType from "./request/discrepancyTypeModel";
 import Request from "./request/requestModel";
 import Discrepancy from "./request/discrepancyModel";
@@ -55,6 +54,7 @@ SubjectPrerequisite.belongsTo(Subject, { foreignKey: "idPrerequisiteSubject", ta
 
 /********** ASSET SCHEMA  ***********/
 Status.hasMany(EmailVerification, { foreignKey: "idStatus", sourceKey: "idStatus" });
+Status.hasMany(Request, { foreignKey: "idStatus", sourceKey: "idStatus" });
 Status.belongsTo(StatusType, { foreignKey: "idStatusType", targetKey: "idStatusType" });
 
 //StatusTypes
@@ -66,7 +66,6 @@ EmailVerification.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" })
 
 /********** REQUEST SCHEMA *********/
 //RequestStatus
-RequestStatus.hasMany(Request, {foreignKey:"idRequestStatus", sourceKey:"idRequestStatus"});
 
 //DiscrepancyType
 DiscrepancyType.hasMany(Discrepancy, { foreignKey: "idDiscrepancyType", sourceKey: "idDiscrepancyType" });
@@ -74,7 +73,7 @@ DiscrepancyType.hasMany(Discrepancy, { foreignKey: "idDiscrepancyType", sourceKe
 //Request
 Request.belongsTo(StudentCareer, { foreignKey: "idStudentCareer", targetKey: "idStudentCareer" });
 Request.belongsTo(Employee, { foreignKey: "idEmployeeReviewer", targetKey: "idEmployee" });
-Request.belongsTo(RequestStatus, {foreignKey:"idRequestStatus", targetKey:"idRequestStatus"});
+Request.belongsTo(Status, {foreignKey:"idtStatus", targetKey:"idtStatus"});
 Request.hasMany(Discrepancy, { foreignKey: "idRequest", sourceKey: "idRequest" });
 Request.hasOne(ScoreCalculation, { foreignKey: "idRequest", sourceKey: "idRequest" });
 
@@ -105,3 +104,5 @@ Discrepancy.sync();
 Justification.sync();
 ScoreCalculation.sync();
 ScoringParameter.sync();
+Status.sync();
+StatusType.sync();
