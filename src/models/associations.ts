@@ -73,7 +73,7 @@ DiscrepancyType.hasMany(Discrepancy, { foreignKey: "idDiscrepancyType", sourceKe
 //Request
 Request.belongsTo(StudentCareer, { foreignKey: "idStudentCareer", targetKey: "idStudentCareer" });
 Request.belongsTo(Employee, { foreignKey: "idEmployeeReviewer", targetKey: "idEmployee" });
-Request.belongsTo(Status, {foreignKey:"idtStatus", targetKey:"idtStatus"});
+Request.belongsTo(Status, {foreignKey:"idStatus", targetKey:"idStatus"});
 Request.hasMany(Discrepancy, { foreignKey: "idRequest", sourceKey: "idRequest" });
 Request.hasOne(ScoreCalculation, { foreignKey: "idRequest", sourceKey: "idRequest" });
 
