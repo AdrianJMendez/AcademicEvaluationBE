@@ -17,9 +17,6 @@ class AuthService {
     static async loginUser(email: string, password: string) {
         
         const user = await User.findOne({
-            attributes: [
-                "idUser", "email", "isActive", "isVerified", "idRole"
-            ],
             where: {
                 email: email,
                 password: password
@@ -34,8 +31,17 @@ class AuthService {
 
         if(!(user.isVerified))
             return JsonResponse.error(405,"Por favor verifique su correo.");
+
+        const data = {
+            idUser : user.idUser,
+            email : user.email,
+            name: user.name,
+            isActive : user.isActive,
+            isVerified : user.isVerified,
+            role : user.idRole == 1 ? 'student' : user.idRole == 2 ? 'employee' : 'admin'
+        }
         
-        return JsonResponse.success(user,"La petición se ha realizado con éxito.");
+        return JsonResponse.success(data,"La petición se ha realizado con éxito.");
     }
 
     static async registerUser(form: RegisterUserProp) {
