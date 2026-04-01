@@ -4,6 +4,7 @@ import usersRoutes from './routes/users/usersRoutes';
 import authRoutes from './routes/users/authRoutes';
 import publicRoutes from './routes/publicRoutes';
 import careerRoutes from './routes/academy/careerRoutes';
+import requestRoutes from './routes/request/requestRoutes';
 
 import { verifyToken } from './utils/jwtService';
 
@@ -17,6 +18,8 @@ index.use('/public', publicRoutes);
 
 index.use('/users', usersRoutes);
 
-index.use('/academy',careerRoutes)
+index.use('/academy',careerRoutes);
+
+index.use('/request', requestRoutes);
 
 export default index;
