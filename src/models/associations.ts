@@ -15,6 +15,7 @@ import ScoringParameter from "./request/scoringParameterModel";
 import Status from "./asset/statusModel";
 import EmailVerification from "./asset/emailVerificationModel";
 import StatusType from "./asset/statusTypeModel";
+import CareerSubject from "./academy/careerSubjectModel.ts";
 
 /********** USERS SCHEMA *********/
 //User
@@ -39,14 +40,14 @@ StudentCareer.hasMany(Request, { foreignKey: "idStudentCareer", sourceKey: "idSt
 
 /********** ACADEMY SCHEMA *********/
 //Career
-Career.hasMany(Subject, { foreignKey: "idCareer", sourceKey: "idCareer" });
 Career.belongsToMany(Student, {through : StudentCareer, foreignKey : "idCareer", otherKey:"idStudent", uniqueKey:"ukStudent_Career"});
+Career.belongsToMany(Subject, {through : CareerSubject, foreignKey : "idCareer", otherKey:"idSubject", uniqueKey:"ukCareerSubject"});
 
 //Subject
-Subject.belongsTo(Career, { foreignKey: "idCareer", targetKey: "idCareer" });
 Subject.hasMany(SubjectPrerequisite, { foreignKey: "idSubject", sourceKey: "idSubject", as: "Prerequisites" });
 Subject.hasMany(SubjectPrerequisite, { foreignKey: "idPrerequisiteSubject", sourceKey: "idSubject", as: "Dependents" });
 Subject.hasMany(Discrepancy, { foreignKey: "idSubject", sourceKey: "idSubject" });
+Subject.belongsToMany(Career, {through: CareerSubject, foreignKey:"idSubject", otherKey:"idCareer", uniqueKey:"ukCareerSubject"});
 
 //SubjectPrerequisite
 SubjectPrerequisite.belongsTo(Subject, { foreignKey: "idSubject", targetKey: "idSubject", as: "Subject" });

@@ -4,15 +4,8 @@ import Career from './careerModel';
 
 class Subject extends Model {
 
-  declare getPlan: BelongsToGetAssociationMixin<Career>;
-  declare Career: Career;
-
   get idSubject(): number {
     return this.getDataValue("idSubject");
-  }
-
-  get idCareer(): number {
-    return this.getDataValue("idCareer");
   }
 
   get subjectCode(): string {
@@ -55,14 +48,6 @@ Subject.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
-    },
-    idCareer: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "Career",
-        key: 'idCareer',
-      },
     },
     subjectCode: {
       type: DataTypes.STRING(20),

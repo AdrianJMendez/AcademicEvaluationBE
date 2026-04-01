@@ -1,7 +1,11 @@
-import { BelongsToGetAssociationMixin, DataTypes, HasManyGetAssociationsMixin, HasOneGetAssociationMixin, Model } from 'sequelize';
+import { BelongsToGetAssociationMixin, BelongsToManyGetAssociationsMixin, DataTypes, HasManyGetAssociationsMixin, HasOneGetAssociationMixin, Model } from 'sequelize';
 import sequelize from '../../utils/connection';
+import Subject from './subjectModel';
 
 class Career extends Model {
+
+  declare getSubjects : BelongsToManyGetAssociationsMixin<Subject>;
+  declare Subjects: Subject[];
 
   get idCareer(): number {
     return this.getDataValue("idCareer");
