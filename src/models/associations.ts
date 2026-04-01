@@ -13,10 +13,14 @@ import Discrepancy from "./request/discrepancyModel";
 import Justification from "./request/justificationModel";
 import ScoreCalculation from "./request/scoreCalculationModel";
 import ScoringParameter from "./request/scoringParameterModel";
+import Status from "./asset/statusModel";
+import EmailVerification from "./asset/emailVerificationModel";
+import StatusType from "./asset/statusTypeModel";
 
 /********** USERS SCHEMA *********/
 //User
 User.belongsTo(Role, { foreignKey: "idRole", targetKey: "idRole" });
+User.hasMany(EmailVerification, { foreignKey: "idUser", sourceKey: "idUser" });
 User.hasOne(Student, { foreignKey: "idUser", sourceKey: "idUser" });
 User.hasOne(Employee, { foreignKey: "idUser", sourceKey: "idUser" });
 
@@ -48,6 +52,17 @@ Subject.hasMany(Discrepancy, { foreignKey: "idSubject", sourceKey: "idSubject" }
 //SubjectPrerequisite
 SubjectPrerequisite.belongsTo(Subject, { foreignKey: "idSubject", targetKey: "idSubject", as: "Subject" });
 SubjectPrerequisite.belongsTo(Subject, { foreignKey: "idPrerequisiteSubject", targetKey: "idSubject", as: "PrerequisiteSubject" });
+
+/********** ASSET SCHEMA  ***********/
+Status.hasMany(EmailVerification, { foreignKey: "idStatus", sourceKey: "idStatus" });
+Status.belongsTo(StatusType, { foreignKey: "idStatusType", targetKey: "idStatusType" });
+
+//StatusTypes
+StatusType.hasMany(Status, { foreignKey: "idStatusType", sourceKey: "idStatusType" });
+
+//EmailVerifications
+EmailVerification.belongsTo(Status, { foreignKey: "idStatus", targetKey: "idStatus" });
+EmailVerification.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" });
 
 /********** REQUEST SCHEMA *********/
 //RequestStatus

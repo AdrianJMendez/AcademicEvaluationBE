@@ -12,3 +12,22 @@ export const config = {
 
 export const SECRET_KEY = process.env.SECRET_KEY!;
 export const TIME_OUT = process.env.TIME_OUT! as StringValue;
+
+export const emailConfig = {
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_KEY
+    },
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    rateLimit: 10,
+    rateDelta: 1000, 
+    rateLimitDelay: 1000
+};
+
+export const emailDefaults = {
+    from: `"Tu Aplicación" <${process.env.GMAIL_USER || 'tuemail@gmail.com'}>`,
+    replyTo: process.env.GMAIL_REPLY_TO || 'soporte@tuaplicacion.com'
+};
