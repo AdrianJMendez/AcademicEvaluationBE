@@ -8,7 +8,7 @@ class Student extends Model {
   declare getUser: BelongsToGetAssociationMixin<User>;
   declare User: User;
 
-  declare getOfficialPlans: BelongsToManyGetAssociationsMixin<Career>;
+  declare getCareers: BelongsToManyGetAssociationsMixin<Career>;
   declare Careers: Career[];
 
   get idStudent(): number {

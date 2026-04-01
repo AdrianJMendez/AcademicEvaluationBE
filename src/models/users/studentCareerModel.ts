@@ -9,8 +9,8 @@ class StudentCareer extends Model {
 
   declare Career : Career;
 
-  get idStudentPlan(): number {
-    return this.getDataValue("idStudentPlan");
+  get idStudentCareer(): number {
+    return this.getDataValue("idStudentCareer");
   }
 
   get idStudent(): number {

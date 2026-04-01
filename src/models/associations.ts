@@ -30,6 +30,7 @@ Role.hasMany(User, { foreignKey: "idRole", sourceKey: "idRole" });
 //Student
 Student.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" });
 Student.belongsToMany(Career, {through: StudentCareer, foreignKey:"idStudent", otherKey:"idCareer", uniqueKey: "ukStudent_Career"});
+Student.hasMany(StudentCareer, {foreignKey:"idStudent", sourceKey:"idStudent"});    /////ASOCIACION NECESARIA POR LA TABLA REQUEST
 
 //Employee
 Employee.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" });
@@ -37,11 +38,14 @@ Employee.hasMany(Request, { foreignKey: "idEmployeeReviewer", sourceKey: "idEmpl
 
 //StudentPlan
 StudentCareer.hasMany(Request, { foreignKey: "idStudentCareer", sourceKey: "idStudentCareer" });
+StudentCareer.belongsTo(Student, { foreignKey: "idStudent", targetKey: "idStudent" });  /////ASOCIACION NECESARIA POR LA TABLA REQUEST
+StudentCareer.belongsTo(Career, { foreignKey: "idCareer", targetKey: "idCareer" });  /////ASOCIACION NECESARIA POR LA TABLA REQUEST
 
 /********** ACADEMY SCHEMA *********/
 //Career
 Career.belongsToMany(Student, {through : StudentCareer, foreignKey : "idCareer", otherKey:"idStudent", uniqueKey:"ukStudent_Career"});
 Career.belongsToMany(Subject, {through : CareerSubject, foreignKey : "idCareer", otherKey:"idSubject", uniqueKey:"ukCareerSubject"});
+Career.hasMany(StudentCareer, {foreignKey:"idCareer", sourceKey:"idCareer"});    /////ASOCIACION NECESARIA POR LA TABLA REQUEST
 
 //Subject
 Subject.hasMany(SubjectPrerequisite, { foreignKey: "idSubject", sourceKey: "idSubject", as: "Prerequisites" });
