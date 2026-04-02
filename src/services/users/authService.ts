@@ -10,6 +10,7 @@ import EmailTemplate from '../../models/asset/emailTemplateModel';
 import GmailEmailService from '../../utils/gmailService';
 import Student from '../../models/users/studentModel';
 import Employee from '../../models/users/employeeModel';
+import StudentCareer from '../../models/users/studentCareerModel';
 
 class AuthService {
     constructor(){};
@@ -111,12 +112,25 @@ class AuthService {
             });
 
             if(form.idRole == 1){   //Estudiante
-                await Student.create({
+                const newStudent = await Student.create({
                     idUser: newUser.idUser,
-                    ...form.studentData
+                    enrollmentDate : form.studentData?.enrollmentDate,
+                    accountNumber : form.studentData?.accountNumber,
+                    currentPeriod : form.studentData?.currentPeriod
                 },{
                     transaction: t
                 });
+
+                await StudentCareer.bulkCreate(
+                    form.studentData!.careers.map((id)=>{
+                        return {
+                            idStudent: newStudent.idStudent,
+                            idCareer: id
+                        }
+                    }),{
+                    transaction: t
+                });
+
             }else if(form.idRole == 2){ //Empleado
                 await Employee.create({
                     idUser: newUser.idUser,

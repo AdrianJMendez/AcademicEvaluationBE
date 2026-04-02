@@ -1,7 +1,8 @@
 export interface StudentData {
     accountNumber : string,
     enrollmentDate : Date,
-    currentPeriod : number
+    currentPeriod : number,
+    careers: string[]
 }
 
 export interface EmployeeData {
@@ -16,5 +17,5 @@ export interface RegisterUserProp {
     password: string,
     idRole: number,
     studentData? : StudentData,
-    employeeData? : EmployeeData
+    employeeData? : EmployeeData,
 }
