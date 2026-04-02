@@ -4,6 +4,8 @@ import Subject from "../../models/academy/subjectModel";
 import SubjectPrerequisite from "../../models/academy/subjectPrerequisiteModel";
 import Student from "../../models/users/studentModel";
 import User from "../../models/users/userModel";
+import { CareerComparationProp } from "../../utils/interfaces/careerInterfaces";
+import StudentCareer from "../../models/users/studentCareerModel";
 
 class CareerService {
 
@@ -106,6 +108,73 @@ class CareerService {
         }
 
         return JsonResponse.success(career, 'Plan académico obtenido con éxito.');
+    }
+
+    static async evaluateHistory(user : User,prop: CareerComparationProp): Promise<JsonResponse> {
+        
+        console.log("prop", prop);
+
+        const studentCareer = await StudentCareer.findOne({
+            include: [
+                {model: Student, required: true},
+                {model: Career, required: true}
+            ],
+            where: {
+                idStudentCareer: prop.idStudentCareer
+            }
+        });
+
+        if(!studentCareer?.Career || !studentCareer.Student)
+            return JsonResponse.error(400,"No se ha encontrado datos para comparación");
+
+        const student = studentCareer.Student;
+        const career = studentCareer.Career;
+
+        if(student.idUser != user.idUser)
+            return JsonResponse.error(500,"La carrera especificada no pertenece al estudiante registrado.");
+
+        const subjects = await Subject.findAll({
+            include: [
+                {model: Career, required: true, 
+                    where: {
+                        idCareer : career.idCareer
+                    }
+                },
+                { model: SubjectPrerequisite, as: 'Prerequisites', required: false,
+                    include: [
+                        {
+                            model: Subject,
+                            as: 'PrerequisiteSubject',
+                            required: false,
+                        }
+                    ]
+                }
+            ]
+        });
+
+
+
+        ////TODO: REALIZAR LA LOGICA DE COMPARACION DE PLANES DE ESTUDIO
+
+        //DATOS QUEMADOS DE PRUEBA
+        const discrepancies = [
+            {
+                DiscrepancyType: {
+                    idDiscrepancyType: 1,
+                    typeName: "Retraso"
+                },
+                description: "Hubo un retraso al momento de llevar la clase de Ecuaciones Diferenciales."
+            },
+            {
+                DiscrepancyType: {
+                    idDiscrepancyType: 1,
+                    typeName: "Retraso"
+                },
+                description: "En el periodo 2 del 2024 solamente se llevaron 5 clases."
+            }
+        ];
+
+        return JsonResponse.success(subjects,"La petición se ha realizado con éxito.");
     }
 
 

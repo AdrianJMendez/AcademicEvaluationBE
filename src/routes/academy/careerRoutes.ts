@@ -8,5 +8,6 @@ router.get(`${path}/get`, careerController.getCareersByStudentId);  ///RUTA DE P
 router.get(`${path}/student/get/`, careerController.getCareersForStudent);
 router.get(`${path}/get/subjects/:idCareer`, careerController.getSubjectsByCareer);
 router.get(`${path}/:id/plan`, careerController.getCareerPlanById);
+router.post(`${path}/evaluate`, careerController.evaluateHistory);
 
 export default router;

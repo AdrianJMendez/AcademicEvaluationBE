@@ -59,3 +59,17 @@ export const getCareerPlanById = async (req: Request, res: Response) => {
         res.status(500).json(JsonResponse.error(500, "Error Interno del Servidor."));
     }
 }
+
+export const evaluateHistory = async (req: Request, res: Response) => {
+    try {
+
+        const params = formatRequest(req);
+        const user = await getUserFromJWT(req);
+
+        const result = await CareerService.evaluateHistory(user,params);
+        
+        res.status(result.getStatus()).json(result);
+    } catch (err) {
+        res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
+    }
+}
