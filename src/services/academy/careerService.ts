@@ -57,18 +57,7 @@ class CareerService {
                 {model: Career, required: true, where:{
                     idCareer: career.idCareer
                 }},
-                {
-                    model: SubjectPrerequisite,
-                    as: 'Prerequisites',
-                    required: false,
-                    include: [
-                        {
-                            model: Subject,
-                            as: 'PrerequisiteSubject',
-                            required: false,
-                        }
-                    ]
-                }
+                { model: Subject, as: "Prerequisites", required: false}
             ]
         });
 
@@ -88,18 +77,7 @@ class CareerService {
                     model: Subject,
                     required: false,
                     include: [
-                        {
-                            model: SubjectPrerequisite,
-                            as: 'Prerequisites',
-                            required: false,
-                            include: [
-                                {
-                                    model: Subject,
-                                    as: 'PrerequisiteSubject',
-                                    required: false,
-                                }
-                            ]
-                        }
+                        { model: Subject, as: "Prerequisites", required: false}
                     ]
                 }
             ]
