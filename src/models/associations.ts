@@ -46,12 +46,20 @@ StudentCareer.belongsTo(Career, { foreignKey: "idCareer", targetKey: "idCareer" 
 Career.belongsToMany(Student, {through : StudentCareer, foreignKey : "idCareer", otherKey:"idStudent", uniqueKey:"ukStudent_Career"});
 Career.belongsToMany(Subject, {through : CareerSubject, foreignKey : "idCareer", otherKey:"idSubject", uniqueKey:"ukCareerSubject"});
 Career.hasMany(StudentCareer, {foreignKey:"idCareer", sourceKey:"idCareer"});    /////ASOCIACION NECESARIA POR LA TABLA REQUEST
+Career.hasMany(CareerSubject, {foreignKey:"idCareer", sourceKey:"idCareer"});
 
 //Subject
-Subject.hasMany(SubjectPrerequisite, { foreignKey: "idSubject", sourceKey: "idSubject", as: "Prerequisites" });
-Subject.hasMany(SubjectPrerequisite, { foreignKey: "idPrerequisiteSubject", sourceKey: "idSubject", as: "Dependents" });
+Subject.hasMany(SubjectPrerequisite, { foreignKey: "idSubject", sourceKey: "idSubject", as: "PrerequisiteLinks" });
+Subject.hasMany(SubjectPrerequisite, { foreignKey: "idPrerequisiteSubject", sourceKey: "idSubject", as: "DependentLinks" });
 Subject.hasMany(Discrepancy, { foreignKey: "idSubject", sourceKey: "idSubject" });
+Subject.hasMany(CareerSubject, {foreignKey:"idSubject", sourceKey:"idSubject"});
 Subject.belongsToMany(Career, {through: CareerSubject, foreignKey:"idSubject", otherKey:"idCareer", uniqueKey:"ukCareerSubject"});
+Subject.belongsToMany(Subject, {through: SubjectPrerequisite, as:"Prerequisites", foreignKey:"idSubject", otherKey:"idPrerequisiteSubject",uniqueKey:"ukPrerequisite_Subject"});
+Subject.belongsToMany(Subject, {through: SubjectPrerequisite, as:"Dependents", foreignKey:"idPrerequisiteSubject", otherKey:"idSubject",uniqueKey:"ukPrerequisite_Subject"});
+
+//CareerSubject
+CareerSubject.belongsTo(Subject, {foreignKey:"idSubject", targetKey:"idSubject"});
+CareerSubject.belongsTo(Career, {foreignKey:"idCareer", targetKey:"idCareer"});
 
 //SubjectPrerequisite
 SubjectPrerequisite.belongsTo(Subject, { foreignKey: "idSubject", targetKey: "idSubject", as: "Subject" });

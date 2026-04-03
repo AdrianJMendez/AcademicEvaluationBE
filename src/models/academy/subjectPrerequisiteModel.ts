@@ -64,7 +64,7 @@ SubjectPrerequisite.init(
     timestamps: false,
     indexes: [{
       unique: true,
-      name: "ukPrerequsite_Subject",
+      name: "ukPrerequisite_Subject",
       fields: ['idSubject', 'idPrerequisiteSubject']
     }]
   }

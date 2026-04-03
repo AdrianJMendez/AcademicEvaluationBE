@@ -1,8 +1,18 @@
 import { BelongsToGetAssociationMixin, DataTypes, HasManyGetAssociationsMixin, Model } from 'sequelize';
 import sequelize from '../../utils/connection';
 import Career from './careerModel';
+import SubjectPrerequisite from './subjectPrerequisiteModel';
+import CareerSubject from './careerSubjectModel.ts';
 
 class Subject extends Model {
+
+  declare Prerequisites?: Subject[];
+
+  declare Dependents?: Subject[];
+
+  declare SubjectPrerequisite?: SubjectPrerequisite;
+
+  declare CareerSubjects?: CareerSubject[];
 
   get idSubject(): number {
     return this.getDataValue("idSubject");
