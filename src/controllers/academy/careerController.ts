@@ -70,6 +70,7 @@ export const evaluateHistory = async (req: Request, res: Response) => {
         
         res.status(result.getStatus()).json(result);
     } catch (err) {
+        console.log(err);
         res.status(500).json(JsonResponse.error(500,"Error Interno del Servidor."));
     }
 }

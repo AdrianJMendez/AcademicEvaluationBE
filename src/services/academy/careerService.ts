@@ -4,8 +4,10 @@ import Subject from "../../models/academy/subjectModel";
 import SubjectPrerequisite from "../../models/academy/subjectPrerequisiteModel";
 import Student from "../../models/users/studentModel";
 import User from "../../models/users/userModel";
-import { CareerComparationProp } from "../../utils/interfaces/careerInterfaces";
+import { CareerComparationProp, DiscrepancyProp, ParsedSubject, Prerequisite, PrimarySubject } from "../../utils/interfaces/careerInterfaces";
 import StudentCareer from "../../models/users/studentCareerModel";
+import CareerSubject from "../../models/academy/careerSubjectModel.ts";
+import { analyzeCurriculum } from "../../utils/history-evaluator";
 
 class CareerService {
 
@@ -133,49 +135,40 @@ class CareerService {
         if(student.idUser != user.idUser)
             return JsonResponse.error(500,"La carrera especificada no pertenece al estudiante registrado.");
 
-        const subjects = await Subject.findAll({
+        const rawSubjects = await Subject.findAll({
             include: [
-                {model: Career, required: true, 
+                {model: CareerSubject, required: true, 
                     where: {
                         idCareer : career.idCareer
                     }
                 },
-                { model: SubjectPrerequisite, as: 'Prerequisites', required: false,
-                    include: [
-                        {
-                            model: Subject,
-                            as: 'PrerequisiteSubject',
-                            required: false,
-                        }
-                    ]
-                }
+                { model: Subject, as: "Prerequisites", required: false}
             ]
         });
 
-
-
-        ////TODO: REALIZAR LA LOGICA DE COMPARACION DE PLANES DE ESTUDIO
-
-        //DATOS QUEMADOS DE PRUEBA
-        const discrepancies = [
-            {
-                DiscrepancyType: {
-                    idDiscrepancyType: 1,
-                    typeName: "Retraso"
-                },
-                description: "Hubo un retraso al momento de llevar la clase de Ecuaciones Diferenciales."
-            },
-            {
-                DiscrepancyType: {
-                    idDiscrepancyType: 1,
-                    typeName: "Retraso"
-                },
-                description: "En el periodo 2 del 2024 solamente se llevaron 5 clases."
+        const mappedSubjects : PrimarySubject[] = rawSubjects.map((s)=>{
+            return {
+                idSubject: s.idSubject,
+                subjectCode: s.subjectCode,
+                subjectName: s.subjectName,
+                idealPeriod: s.idealPeriod,
+                isOptative: s.isOptative,
+                isElective: s.CareerSubjects!.find((cs=>cs.idCareer == career.idCareer))!.isElective,
+                prerequisites: s.Prerequisites!.map((r)=>{
+                    return {
+                        idSubject: r.idSubject,
+                        subjectCode: r.subjectCode,
+                        subjectName: r.subjectName
+                    }
+                }) as Prerequisite[]
             }
-        ];
+        });
 
-        return JsonResponse.success(subjects,"La petición se ha realizado con éxito.");
+        const discrepanciesFound = analyzeCurriculum(mappedSubjects,prop.history);
+
+        return JsonResponse.success(discrepanciesFound,"La petición se ha realizado con éxito.");
     }
+
 
 
 }
