@@ -157,6 +157,88 @@ function canCompleteOnTime(
 }
 
 /**
+ * Verifica si existen asignaturas cursadas sin tener sus requisitos completados.
+ * Retorna una discrepancia si encuentra alguna violación de prerequisitos.
+ */
+function checkMissingPrerequisites(
+    history: ParsedSubject[],
+    primarySubjects: PrimarySubject[],
+    lastCompletionPeriod: Map<string, number>
+): DiscrepancyProp | null {
+    const subjectsMap = new Map<string, PrimarySubject>();
+    for (const subj of primarySubjects) {
+        subjectsMap.set(subj.subjectCode, subj);
+    }
+    
+    const violations: string[] = [];
+    
+    for (const historyEntry of history) {
+        const subject = subjectsMap.get(historyEntry.subjectCode);
+        if (!subject) continue;
+        
+        // Check if subject has prerequisites
+        if (subject.prerequisites && subject.prerequisites.length > 0) {
+            for (const prereq of subject.prerequisites) {
+                // Check if prerequisite was completed BEFORE this subject was taken
+                const prereqCompletionPeriod = lastCompletionPeriod.get(prereq.subjectCode);
+                const currentSubjectPeriod = lastCompletionPeriod.get(historyEntry.subjectCode);
+
+                console.log(prereqCompletionPeriod, currentSubjectPeriod);
+                
+                if (!prereqCompletionPeriod) {
+                    // Prerequisite never completed
+                    violations.push(`"${subject.subjectName}" requiere "${prereq.subjectName}" que nunca fue cursada`);
+                } else if (currentSubjectPeriod && prereqCompletionPeriod > currentSubjectPeriod) {
+                    // Prerequisite was completed after the subject (should be impossible in valid history,
+                    // but could happen if data is inconsistent)
+                    violations.push(`"${subject.subjectName}" fue cursada antes que su requisito "${prereq.subjectName}"`);
+                }
+            }
+        }
+    }
+    
+    if (violations.length > 0) {
+        const uniqueViolations = [...new Set(violations)];
+        const description = `Existen asignaturas cursadas sin cumplir sus requisitos: ${uniqueViolations.join("; ")}.`;
+        return {
+            type: "Error",
+            description,
+            severity: "Alta"
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Verifica si el historial tiene consistencia básica (códigos de materia válidos).
+ */
+function validateHistory(
+    history: ParsedSubject[],
+    primarySubjects: PrimarySubject[]
+): DiscrepancyProp | null {
+    const validCodes = new Set(primarySubjects.map(s => s.subjectCode));
+    const invalidSubjects = new Set<string>();
+    
+    for (const entry of history) {
+        if (!validCodes.has(entry.subjectCode)) {
+            invalidSubjects.add(entry.subjectCode);
+        }
+    }
+    
+    if (invalidSubjects.size > 0) {
+        const subjectsList = Array.from(invalidSubjects).join(", ");
+        return {
+            type: "Error",
+            description: `El historial contiene asignaturas que no pertenecen al plan de estudios: ${subjectsList}.`,
+            severity: "Alta"
+        };
+    }
+    
+    return null;
+}
+
+/**
  * Groups discrepancies by type and similar descriptions.
  */
 function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[] {
@@ -234,7 +316,7 @@ function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[]
         grouped.push({
             type: "Retraso",
             description,
-            severity: "alta"
+            severity: "Alta"
         });
     }
     
@@ -246,7 +328,7 @@ function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[]
         grouped.push({
             type: "Baja carga académica",
             description,
-            severity: "media"
+            severity: "Media"
         });
     }
     
@@ -258,7 +340,7 @@ function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[]
         grouped.push({
             type: "Periodo sin matricula",
             description,
-            severity: "media"
+            severity: "Media"
         });
     }
     
@@ -267,7 +349,7 @@ function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[]
         grouped.push({
             type: "Retraso",
             description: disc,
-            severity: "alta"
+            severity: "Alta"
         });
     }
     
@@ -276,7 +358,7 @@ function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[]
         grouped.push({
             type: "Retraso",
             description: disc,
-            severity: "media"
+            severity: "Media"
         });
     }
     
@@ -301,8 +383,14 @@ export function analyzeCurriculum(
         return [{
             type: "Observacion",
             description: "El estudiante no tiene historial académico registrado.",
-            severity: "info"
+            severity: "Info"
         }];
+    }
+
+    // VALIDACIÓN 1: Verificar que las asignaturas del historial existan en el plan
+    const historyValidation = validateHistory(history, primarySubjects);
+    if (historyValidation) {
+        discrepancies.push(historyValidation);
     }
 
     const yearMap = normalizeYears(history);
@@ -335,12 +423,26 @@ export function analyzeCurriculum(
         }
     }
 
+    // VALIDACIÓN 2: Verificar prerequisitos de las asignaturas cursadas
+    const prereqViolation = checkMissingPrerequisites(history, primarySubjects, lastCompletionPeriod);
+    if (prereqViolation) {
+        discrepancies.push(prereqViolation);
+        // Si hay violación de prerequisitos, el estudiante no debería haber podido cursar esas materias
+        // Esto indica un error en el sistema o en el historial
+    }
+
+    if(discrepancies.length > 0){
+        const groupedDiscrepancies = groupDiscrepancies(discrepancies);
+        return groupedDiscrepancies;
+    }
+    
+
     // 1. Check if curriculum is already completed
     if (isCurriculumCompleted(subjectsMap, completedSubjects, completedOptatives, completedElectives)) {
         return [{
             type: "Observacion",
             description: "El plan de estudios fue completado a tiempo.",
-            severity: "info"
+            severity: "Info"
         }];
     }
 
@@ -358,7 +460,7 @@ export function analyzeCurriculum(
         return [{
             type: "Observacion",
             description: "El estudiante puede completar el plan a tiempo.",
-            severity: "info"
+            severity: "Info"
         }];
     }
 
@@ -379,14 +481,14 @@ export function analyzeCurriculum(
                 discrepancies.push({
                     type: "Periodo sin matricula",
                     description: `No se matricularon asignaturas en el año ${year}, periodo ${periodNum}.`,
-                    severity: "media"
+                    severity: "Media"
                 });
             }
         } else if (count < 4 && count > 0) {
             discrepancies.push({
                 type: "Baja carga académica",
                 description: `En el año ${year}, periodo ${periodNum} solo se matricularon ${count} asignatura(s), menos del mínimo recomendado (4).`,
-                severity: "media"
+                severity: "Media"
             });
         }
     }
@@ -416,13 +518,13 @@ export function analyzeCurriculum(
                 discrepancies.push({
                     type: "Retraso",
                     description: `Retraso en la asignatura "${subject.subjectName}" debido a que su requisito "${prereqName}" fue cursado tarde.`,
-                    severity: "alta"
+                    severity: "Alta"
                 });
             } else {
                 discrepancies.push({
                     type: "Retraso",
                     description: `Retraso en la asignatura "${subject.subjectName}": cursada en periodo ${completionPeriod} cuando su periodo ideal era ${ideal}.`,
-                    severity: "media"
+                    severity: "Media"
                 });
             }
         }
@@ -438,7 +540,7 @@ export function analyzeCurriculum(
             discrepancies.push({
                 type: "Retraso",
                 description: `La asignatura "${subject.subjectName}" (periodo ideal ${ideal}) aún no ha sido cursada y ya se encuentra atrasada.`,
-                severity: "alta"
+                severity: "Alta"
             });
         }
     }
