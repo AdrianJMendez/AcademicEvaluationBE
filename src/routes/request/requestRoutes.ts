@@ -10,5 +10,6 @@ router.get(`/employee/get/status/:statusName`, requestController.getRequestsForE
 router.get(`/employee/get/detail/:idRequest`, requestController.getRequestDetailForEmployee);
 router.patch(`/employee/take/:idRequest`, requestController.takeRequestForEmployee);
 router.patch(`/employee/review/:idRequest`, requestController.finishReviewForEmployee);
+router.post(`/`, requestController.createRequest);
 
 export default router;

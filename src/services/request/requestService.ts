@@ -14,6 +14,9 @@ import Justification from "../../models/request/justificationModel";
 import DiscrepancyType from "../../models/request/discrepancyTypeModel";
 import ScoreCalculation from "../../models/request/scoreCalculationModel";
 import ScoringParameter from "../../models/request/scoringParameterModel";
+import { RequestRegisterProp } from '../../utils/interfaces/requestInterfaces';
+import { title } from 'process';
+import JustificationDiscrepancy from '../../models/request/justificationDiscrepancyModel';
 
 type EmployeeRequestStatus = 'pending' | 'in-review' | 'reviewed' | 'all';
 
@@ -805,6 +808,108 @@ class RequestService {
             return JsonResponse.error(500, "Error al finalizar la revisión de la solicitud.");
         }
     }
+
+    static async createRequest(user: User, prop: RequestRegisterProp): Promise<JsonResponse>{
+        const studentFromUser = await user.getStudent();
+
+        if(!studentFromUser)
+            return JsonResponse.error(500,"El usuario registrado no es un estudiante.");
+
+        const studentCareer = await StudentCareer.findByPk(prop.idStudentCareer);
+
+        if(studentFromUser.idStudent != studentCareer?.idStudent)
+            return JsonResponse.error(500,"La carrera ingresada no pertenece al estudiante registrado.");
+
+        let hasDiscrepancies = prop.discrepancies.find((d)=>d.type != 'Observacion');
+        if(hasDiscrepancies && !prop.justifications)
+            return JsonResponse.error(500,"Existen discrepancias que requieren justificacion, y estas no existen.");
+
+        const t = await sequelize.transaction();
+        try{   
+
+            const newRequest = await Request.create({
+                idStatus : 4,   ///Request Pendiente
+                idStudentCareer: prop.idStudentCareer
+            },{
+                transaction: t
+            });
+
+            const discrepancyIndexes : Array<{idDiscrepancy:number,idProp:number}> = [];
+            for(let i = 0; i < prop.discrepancies.length; i++){
+
+                const discrepancyProp = prop.discrepancies[i];
+
+                let discrepancyType = discrepancyProp.type == "Retraso" ? 1 :
+                discrepancyProp.type == "Baja carga académica" ? 2:
+                discrepancyProp.type == "Observacion" ? 3 : 4;
+
+                console.log(discrepancyType);
+
+                const newDiscrepancy = await Discrepancy.create({
+                    idRequest: newRequest.idRequest,
+                    idDiscrepancyType: discrepancyType,
+                    description: discrepancyProp.description,
+                    severity: discrepancyProp.severity
+                },{
+                    transaction: t
+                });
+
+                discrepancyIndexes.push({
+                    idDiscrepancy: newDiscrepancy.idDiscrepancy,
+                    idProp: i
+                });
+            }
+
+            if(prop.justifications){
+
+                const justificationIndexes : Array<{idJustification:number, idProp: number}>  = [];
+
+                for(let i = 0; i < prop.justifications.length; i++){
+
+                    const newJustification = await Justification.create({
+                        title: prop.justifications[i].title,
+                        description : prop.justifications[i].description
+                    },{
+                        transaction: t
+                    });
+
+                    justificationIndexes.push({
+                        idJustification: newJustification.idJustification,
+                        idProp: i
+                    });
+                }
+
+                for(let i = 0; i < prop.justifications.length; i++){
+
+                    let idJustification = justificationIndexes.find((ji)=>ji.idProp == i)?.idJustification;
+
+                    await JustificationDiscrepancy.bulkCreate(
+
+                        prop.justifications[i].discrepancyProps.map((discrepancyProp) => {
+
+                            let idDiscrepancy = discrepancyIndexes.find((di)=>di.idProp == discrepancyProp)?.idDiscrepancy;
+                            return {
+                                idDiscrepancy,
+                                idJustification
+                            }
+                        })
+                    ,{
+                        transaction:t
+                    })
+                }
+            }
+
+            await t.commit();
+
+            return JsonResponse.success(newRequest,"La petición se ha registrado con éxito.");
+
+        }catch(err){
+            console.log(err);
+            await t.rollback();
+            return JsonResponse.error(500,"Ha ocurrido un error al crear la solicitud.");
+        }
+    }
+
 }
 
 export default RequestService;

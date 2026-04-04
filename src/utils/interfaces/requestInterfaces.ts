@@ -8,14 +8,19 @@ export interface DiscrepancyProp{
     justification : JustificactionProp;
 };
 
+export interface DiscrepancyRegisterProp{
+    type: string,
+    description: string,
+    severity: string
+}
 export interface JustificactionProp {
+    discrepancyProps: number[],
     title: string,
     description: string,
-    impactLevel : string,
 }
 
 export interface RequestRegisterProp {
     idStudentCareer: number,
-    discrepancies: DiscrepancyProp[],
-
+    discrepancies: DiscrepancyRegisterProp[],
+    justifications?: JustificactionProp[]
 }
