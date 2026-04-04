@@ -5,6 +5,7 @@ export function formatRequest(request: Request | {[key : string] : any}) : any {
 
     if('body' in request){
         params = {
+            ...request.query,
             ...request.body,
             ...request.params
         }
