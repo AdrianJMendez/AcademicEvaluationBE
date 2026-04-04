@@ -16,6 +16,7 @@ import Status from "./asset/statusModel";
 import EmailVerification from "./asset/emailVerificationModel";
 import StatusType from "./asset/statusTypeModel";
 import CareerSubject from "./academy/careerSubjectModel.ts";
+import JustificationDiscrepancy from "./request/justificationDiscrepancyModel";
 
 /********** USERS SCHEMA *********/
 //User
@@ -51,7 +52,6 @@ Career.hasMany(CareerSubject, {foreignKey:"idCareer", sourceKey:"idCareer"});
 //Subject
 Subject.hasMany(SubjectPrerequisite, { foreignKey: "idSubject", sourceKey: "idSubject", as: "PrerequisiteLinks" });
 Subject.hasMany(SubjectPrerequisite, { foreignKey: "idPrerequisiteSubject", sourceKey: "idSubject", as: "DependentLinks" });
-Subject.hasMany(Discrepancy, { foreignKey: "idSubject", sourceKey: "idSubject" });
 Subject.hasMany(CareerSubject, {foreignKey:"idSubject", sourceKey:"idSubject"});
 Subject.belongsToMany(Career, {through: CareerSubject, foreignKey:"idSubject", otherKey:"idCareer", uniqueKey:"ukCareerSubject"});
 Subject.belongsToMany(Subject, {through: SubjectPrerequisite, as:"Prerequisites", foreignKey:"idSubject", otherKey:"idPrerequisiteSubject",uniqueKey:"ukPrerequisite_Subject"});
@@ -92,12 +92,17 @@ Request.hasOne(ScoreCalculation, { foreignKey: "idRequest", sourceKey: "idReques
 
 //Discrepancy
 Discrepancy.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
-Discrepancy.belongsTo(Subject, { foreignKey: "idSubject", targetKey: "idSubject" });
 Discrepancy.belongsTo(DiscrepancyType, { foreignKey: "idDiscrepancyType", targetKey: "idDiscrepancyType" });
-Discrepancy.hasOne(Justification, { foreignKey: "idDiscrepancy", sourceKey: "idDiscrepancy" });
+Discrepancy.hasMany(JustificationDiscrepancy, {foreignKey:"idDiscrepancy", sourceKey:"idDiscrepancy"});
+Discrepancy.belongsToMany(Justification, {through:JustificationDiscrepancy, foreignKey:"idDiscrepancy", otherKey:"idJustification", uniqueKey:"ukJustification_Discrepancy"});
 
 //Justification
-Justification.belongsTo(Discrepancy, { foreignKey: "idDiscrepancy", targetKey: "idDiscrepancy" });
+Justification.hasMany(JustificationDiscrepancy, { foreignKey:"idJustification", sourceKey:"idJustification"});
+Justification.belongsToMany(Discrepancy, {through:JustificationDiscrepancy, foreignKey:"idJustification", otherKey:"idDiscrepancy", uniqueKey:"ukJustification_Discrepancy"});
+
+//JustificationDiscrepancy
+JustificationDiscrepancy.belongsTo(Discrepancy, {foreignKey:"idDiscrepancy", targetKey:"idDiscrepancy"});
+JustificationDiscrepancy.belongsTo(Justification, {foreignKey:"idJustification", targetKey:"idJustification"});
 
 //ScoreCalculation
 ScoreCalculation.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });

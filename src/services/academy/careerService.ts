@@ -92,8 +92,6 @@ class CareerService {
 
     static async evaluateHistory(user : User,prop: CareerComparationProp): Promise<JsonResponse> {
         
-        console.log("prop", prop);
-
         const studentCareer = await StudentCareer.findOne({
             include: [
                 {model: Student, required: true},
