@@ -39,6 +39,9 @@ class AuthService {
 
         const data = {
             idUser : user.idUser,
+            idRole: user.idRole,
+            idStudent: user.Student?.idStudent,
+            idEmployee: user.Employee?.idEmployee,
             email : user.email,
             name: user.name,
             isActive : user.isActive,
