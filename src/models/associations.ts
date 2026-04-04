@@ -6,7 +6,6 @@ import Career from "./academy/careerModel";
 import Subject from "./academy/subjectModel";
 import SubjectPrerequisite from "./academy/subjectPrerequisiteModel";
 import StudentCareer from "./users/studentCareerModel";
-import RequestStatus from "./request/requestStatusModel";
 import DiscrepancyType from "./request/discrepancyTypeModel";
 import Request from "./request/requestModel";
 import Discrepancy from "./request/discrepancyModel";
@@ -16,6 +15,8 @@ import ScoringParameter from "./request/scoringParameterModel";
 import Status from "./asset/statusModel";
 import EmailVerification from "./asset/emailVerificationModel";
 import StatusType from "./asset/statusTypeModel";
+import CareerSubject from "./academy/careerSubjectModel.ts";
+import JustificationDiscrepancy from "./request/justificationDiscrepancyModel";
 
 /********** USERS SCHEMA *********/
 //User
@@ -30,6 +31,7 @@ Role.hasMany(User, { foreignKey: "idRole", sourceKey: "idRole" });
 //Student
 Student.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" });
 Student.belongsToMany(Career, {through: StudentCareer, foreignKey:"idStudent", otherKey:"idCareer", uniqueKey: "ukStudent_Career"});
+Student.hasMany(StudentCareer, {foreignKey:"idStudent", sourceKey:"idStudent"});    /////ASOCIACION NECESARIA POR LA TABLA REQUEST
 
 //Employee
 Employee.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" });
@@ -37,17 +39,27 @@ Employee.hasMany(Request, { foreignKey: "idEmployeeReviewer", sourceKey: "idEmpl
 
 //StudentPlan
 StudentCareer.hasMany(Request, { foreignKey: "idStudentCareer", sourceKey: "idStudentCareer" });
+StudentCareer.belongsTo(Student, { foreignKey: "idStudent", targetKey: "idStudent" });  /////ASOCIACION NECESARIA POR LA TABLA REQUEST
+StudentCareer.belongsTo(Career, { foreignKey: "idCareer", targetKey: "idCareer" });  /////ASOCIACION NECESARIA POR LA TABLA REQUEST
 
 /********** ACADEMY SCHEMA *********/
 //Career
-Career.hasMany(Subject, { foreignKey: "idCareer", sourceKey: "idCareer" });
 Career.belongsToMany(Student, {through : StudentCareer, foreignKey : "idCareer", otherKey:"idStudent", uniqueKey:"ukStudent_Career"});
+Career.belongsToMany(Subject, {through : CareerSubject, foreignKey : "idCareer", otherKey:"idSubject", uniqueKey:"ukCareerSubject"});
+Career.hasMany(StudentCareer, {foreignKey:"idCareer", sourceKey:"idCareer"});    /////ASOCIACION NECESARIA POR LA TABLA REQUEST
+Career.hasMany(CareerSubject, {foreignKey:"idCareer", sourceKey:"idCareer"});
 
 //Subject
-Subject.belongsTo(Career, { foreignKey: "idCareer", targetKey: "idCareer" });
-Subject.hasMany(SubjectPrerequisite, { foreignKey: "idSubject", sourceKey: "idSubject", as: "Prerequisites" });
-Subject.hasMany(SubjectPrerequisite, { foreignKey: "idPrerequisiteSubject", sourceKey: "idSubject", as: "Dependents" });
-Subject.hasMany(Discrepancy, { foreignKey: "idSubject", sourceKey: "idSubject" });
+Subject.hasMany(SubjectPrerequisite, { foreignKey: "idSubject", sourceKey: "idSubject", as: "PrerequisiteLinks" });
+Subject.hasMany(SubjectPrerequisite, { foreignKey: "idPrerequisiteSubject", sourceKey: "idSubject", as: "DependentLinks" });
+Subject.hasMany(CareerSubject, {foreignKey:"idSubject", sourceKey:"idSubject"});
+Subject.belongsToMany(Career, {through: CareerSubject, foreignKey:"idSubject", otherKey:"idCareer", uniqueKey:"ukCareerSubject"});
+Subject.belongsToMany(Subject, {through: SubjectPrerequisite, as:"Prerequisites", foreignKey:"idSubject", otherKey:"idPrerequisiteSubject",uniqueKey:"ukPrerequisite_Subject"});
+Subject.belongsToMany(Subject, {through: SubjectPrerequisite, as:"Dependents", foreignKey:"idPrerequisiteSubject", otherKey:"idSubject",uniqueKey:"ukPrerequisite_Subject"});
+
+//CareerSubject
+CareerSubject.belongsTo(Subject, {foreignKey:"idSubject", targetKey:"idSubject"});
+CareerSubject.belongsTo(Career, {foreignKey:"idCareer", targetKey:"idCareer"});
 
 //SubjectPrerequisite
 SubjectPrerequisite.belongsTo(Subject, { foreignKey: "idSubject", targetKey: "idSubject", as: "Subject" });
@@ -55,6 +67,7 @@ SubjectPrerequisite.belongsTo(Subject, { foreignKey: "idPrerequisiteSubject", ta
 
 /********** ASSET SCHEMA  ***********/
 Status.hasMany(EmailVerification, { foreignKey: "idStatus", sourceKey: "idStatus" });
+Status.hasMany(Request, { foreignKey: "idStatus", sourceKey: "idStatus" });
 Status.belongsTo(StatusType, { foreignKey: "idStatusType", targetKey: "idStatusType" });
 
 //StatusTypes
@@ -66,7 +79,6 @@ EmailVerification.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" })
 
 /********** REQUEST SCHEMA *********/
 //RequestStatus
-RequestStatus.hasMany(Request, {foreignKey:"idRequestStatus", sourceKey:"idRequestStatus"});
 
 //DiscrepancyType
 DiscrepancyType.hasMany(Discrepancy, { foreignKey: "idDiscrepancyType", sourceKey: "idDiscrepancyType" });
@@ -74,18 +86,23 @@ DiscrepancyType.hasMany(Discrepancy, { foreignKey: "idDiscrepancyType", sourceKe
 //Request
 Request.belongsTo(StudentCareer, { foreignKey: "idStudentCareer", targetKey: "idStudentCareer" });
 Request.belongsTo(Employee, { foreignKey: "idEmployeeReviewer", targetKey: "idEmployee" });
-Request.belongsTo(RequestStatus, {foreignKey:"idRequestStatus", targetKey:"idRequestStatus"});
+Request.belongsTo(Status, {foreignKey:"idStatus", targetKey:"idStatus"});
 Request.hasMany(Discrepancy, { foreignKey: "idRequest", sourceKey: "idRequest" });
 Request.hasOne(ScoreCalculation, { foreignKey: "idRequest", sourceKey: "idRequest" });
 
 //Discrepancy
 Discrepancy.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
-Discrepancy.belongsTo(Subject, { foreignKey: "idSubject", targetKey: "idSubject" });
 Discrepancy.belongsTo(DiscrepancyType, { foreignKey: "idDiscrepancyType", targetKey: "idDiscrepancyType" });
-Discrepancy.hasOne(Justification, { foreignKey: "idDiscrepancy", sourceKey: "idDiscrepancy" });
+Discrepancy.hasMany(JustificationDiscrepancy, {foreignKey:"idDiscrepancy", sourceKey:"idDiscrepancy"});
+Discrepancy.belongsToMany(Justification, {through:JustificationDiscrepancy, foreignKey:"idDiscrepancy", otherKey:"idJustification", uniqueKey:"ukJustification_Discrepancy"});
 
 //Justification
-Justification.belongsTo(Discrepancy, { foreignKey: "idDiscrepancy", targetKey: "idDiscrepancy" });
+Justification.hasMany(JustificationDiscrepancy, { foreignKey:"idJustification", sourceKey:"idJustification"});
+Justification.belongsToMany(Discrepancy, {through:JustificationDiscrepancy, foreignKey:"idJustification", otherKey:"idDiscrepancy", uniqueKey:"ukJustification_Discrepancy"});
+
+//JustificationDiscrepancy
+JustificationDiscrepancy.belongsTo(Discrepancy, {foreignKey:"idDiscrepancy", targetKey:"idDiscrepancy"});
+JustificationDiscrepancy.belongsTo(Justification, {foreignKey:"idJustification", targetKey:"idJustification"});
 
 //ScoreCalculation
 ScoreCalculation.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
@@ -105,3 +122,5 @@ Discrepancy.sync();
 Justification.sync();
 ScoreCalculation.sync();
 ScoringParameter.sync();
+Status.sync();
+StatusType.sync();

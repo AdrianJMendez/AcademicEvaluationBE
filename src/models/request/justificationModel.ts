@@ -4,15 +4,8 @@ import Discrepancy from './discrepancyModel';
 
 class Justification extends Model {
 
-  declare getDiscrepancy: BelongsToGetAssociationMixin<Discrepancy>;
-  declare Discrepancy: Discrepancy;
-
   get idJustification(): number {
     return this.getDataValue("idJustification");
-  }
-
-  get idDiscrepancy(): number {
-    return this.getDataValue("idDiscrepancy");
   }
 
   get title(): string {
@@ -47,14 +40,6 @@ Justification.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
-    },
-    idDiscrepancy: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "Discrepancy",
-        key: 'idDiscrepancy',
-      },
     },
     title: {
       type: DataTypes.STRING('MAX'),

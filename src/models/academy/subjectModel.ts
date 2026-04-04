@@ -1,18 +1,21 @@
 import { BelongsToGetAssociationMixin, DataTypes, HasManyGetAssociationsMixin, Model } from 'sequelize';
 import sequelize from '../../utils/connection';
 import Career from './careerModel';
+import SubjectPrerequisite from './subjectPrerequisiteModel';
+import CareerSubject from './careerSubjectModel.ts';
 
 class Subject extends Model {
 
-  declare getPlan: BelongsToGetAssociationMixin<Career>;
-  declare Career: Career;
+  declare Prerequisites?: Subject[];
+
+  declare Dependents?: Subject[];
+
+  declare SubjectPrerequisite?: SubjectPrerequisite;
+
+  declare CareerSubjects?: CareerSubject[];
 
   get idSubject(): number {
     return this.getDataValue("idSubject");
-  }
-
-  get idCareer(): number {
-    return this.getDataValue("idCareer");
   }
 
   get subjectCode(): string {
@@ -43,8 +46,8 @@ class Subject extends Model {
     return this.getDataValue("description");
   }
 
-  get isElective(): boolean {
-    return this.getDataValue("isElective");
+  get isOptative(): boolean {
+    return this.getDataValue("isOptative");
   }
 
 }
@@ -55,14 +58,6 @@ Subject.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
-    },
-    idCareer: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: "Career",
-        key: 'idCareer',
-      },
     },
     subjectCode: {
       type: DataTypes.STRING(20),
@@ -92,7 +87,7 @@ Subject.init(
       type: DataTypes.STRING('MAX'),
       allowNull: true,
     },
-    isElective: {
+    isOptative: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
