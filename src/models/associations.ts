@@ -19,6 +19,7 @@ import EmailVerification from "./asset/emailVerificationModel";
 import StatusType from "./asset/statusTypeModel";
 import CareerSubject from "./academy/careerSubjectModel.ts";
 import JustificationDiscrepancy from "./request/justificationDiscrepancyModel";
+import RequestAcademicHistory from "./request/requestAcademicHistoryModel";
 
 /********** USERS SCHEMA *********/
 //User
@@ -91,12 +92,16 @@ Request.hasMany(Discrepancy, { foreignKey: "idRequest", sourceKey: "idRequest" }
 Request.hasOne(ScoreCalculation, { foreignKey: "idRequest", sourceKey: "idRequest" });
 Request.hasMany(RequestImage, { foreignKey: "idRequest", sourceKey: "idRequest" });
 Request.hasOne(RequestReport, { foreignKey: "idRequest", sourceKey: "idRequest" });
+Request.hasOne(RequestAcademicHistory, { foreignKey: "idRequest", sourceKey: "idRequest" });
 
 //RequestImage
 RequestImage.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
 
 //RequestReport
 RequestReport.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
+
+//RequestAcademicHistory
+RequestAcademicHistory.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
 
 //Discrepancy
 Discrepancy.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
@@ -135,3 +140,4 @@ ScoringParameter.sync();
 Status.sync();
 StatusType.sync();
 RequestImage.sync();
+RequestAcademicHistory.sync();

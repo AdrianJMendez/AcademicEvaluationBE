@@ -35,6 +35,14 @@ class Career extends Model {
     return this.getDataValue("yearLength");
   }
 
+  get optativesQty(): number {
+    return this.getDataValue("optativesQty");
+  }
+
+  get electivesQty(): number {
+    return this.getDataValue("electivesQty");
+  }
+
   get isActive(): boolean {
     return this.getDataValue("isActive");
   }
@@ -71,6 +79,14 @@ Career.init(
     yearLength: {
       type: DataTypes.INTEGER,
       allowNull: false,
+    },
+    optativesQty: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    electivesQty: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     isActive :{
         type: DataTypes.BOOLEAN,
