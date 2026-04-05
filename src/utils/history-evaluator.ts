@@ -183,8 +183,6 @@ function checkMissingPrerequisites(
                 const prereqCompletionPeriod = lastCompletionPeriod.get(prereq.subjectCode);
                 const currentSubjectPeriod = lastCompletionPeriod.get(historyEntry.subjectCode);
 
-                console.log(prereqCompletionPeriod, currentSubjectPeriod);
-                
                 if (!prereqCompletionPeriod) {
                     // Prerequisite never completed
                     violations.push(`"${subject.subjectName}" requiere "${prereq.subjectName}" que nunca fue cursada`);

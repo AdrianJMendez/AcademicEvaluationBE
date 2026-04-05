@@ -1,6 +1,9 @@
+import { ParsedSubject } from "./careerInterfaces";
+
 export interface ImageUploadData {
     base64Image: string;
 }
+
 export interface DiscrepancyProp{
     idSubject?: number,
     idDiscrepancyType: number, 
@@ -24,6 +27,7 @@ export interface JustificactionProp {
 
 export interface RequestRegisterProp {
     idStudentCareer: number,
+    academicHistory: ParsedSubject[],
     discrepancies: DiscrepancyRegisterProp[],
     justifications?: JustificactionProp[],
     images?: ImageUploadData[]

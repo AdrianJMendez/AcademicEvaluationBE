@@ -22,6 +22,7 @@ import JustificationDiscrepancy from '../../models/request/justificationDiscrepa
 import RequestImageService from './requestImageService';
 import { generateRequestReport } from '../../utils/reportGenerator';
 import { calculateRequestScore, DEFAULT_SCORING, ScoringConfig } from '../../utils/requestScoring';
+import RequestAcademicHistory from '../../models/request/requestAcademicHistoryModel';
 
 type EmployeeRequestStatus = 'pending' | 'in-review' | 'reviewed' | 'all';
 
@@ -777,7 +778,8 @@ class RequestService {
                     { model: Career, required: true}
                 ]},
                 {model: ScoreCalculation, required: false},
-                {model: RequestImage, required: false}
+                {model: RequestImage, required: false},
+                {model: RequestAcademicHistory, required: true}
             ]
         });
 
@@ -1029,6 +1031,9 @@ class RequestService {
         if(hasDiscrepancies && !prop.justifications)
             return JsonResponse.error(500,"Existen discrepancias que requieren justificacion, y estas no existen.");
 
+        if(!prop.academicHistory)
+            return JsonResponse.error(500,"Hubo un error al enviar el historial.");
+
         const t = await sequelize.transaction();
         try{   
 
@@ -1102,6 +1107,27 @@ class RequestService {
                         transaction:t
                     })
                 }
+            }
+
+            //Crear registro de historial
+            if(prop.academicHistory){
+                let creditsTotal = 0;
+                let scoreTotal = 0; 
+                prop.academicHistory.forEach((subject) => {
+                    scoreTotal += subject.credits * subject.score,
+
+                    creditsTotal += subject.credits
+                });
+
+                const academicAverage = scoreTotal/creditsTotal;
+
+                await RequestAcademicHistory.create({
+                    idRequest: newRequest.idRequest,
+                    jsonContent: JSON.stringify(prop.academicHistory),
+                    academicAverage: academicAverage
+                },{
+                    transaction: t
+                });
             }
 
             //Subir imagenes si existen
