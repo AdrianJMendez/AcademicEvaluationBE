@@ -779,7 +779,7 @@ class RequestService {
                 ]},
                 {model: ScoreCalculation, required: false},
                 {model: RequestImage, required: false},
-                {model: RequestAcademicHistory, required: true}
+                {model: RequestAcademicHistory, required: false}
             ]
         });
 
