@@ -17,6 +17,8 @@ import ScoringParameter from "../../models/request/scoringParameterModel";
 import { RequestRegisterProp } from '../../utils/interfaces/requestInterfaces';
 import { title } from 'process';
 import JustificationDiscrepancy from '../../models/request/justificationDiscrepancyModel';
+import RequestImageService from './requestImageService';
+import RequestImage from '../../models/request/requestImageModel';
 
 type EmployeeRequestStatus = 'pending' | 'in-review' | 'reviewed' | 'all';
 
@@ -609,7 +611,8 @@ class RequestService {
                 {model: StudentCareer, required: true, include: [
                     { model: Career, required: true}
                 ]},
-                {model: ScoreCalculation, required: false}
+                {model: ScoreCalculation, required: false},
+                {model: RequestImage, required: false}
             ]
         });
 
@@ -923,6 +926,24 @@ class RequestService {
                     ,{
                         transaction:t
                     })
+                }
+            }
+
+            //Subir imagenes si existen
+            if(prop.images){
+
+                var imageResult;
+
+                if(prop.images.length == 1){
+                    imageResult = await RequestImageService.uploadRequestmage(newRequest,prop.images[0],t);
+                }else{
+                    imageResult = await RequestImageService.uploadMultipleRequestImages(newRequest,prop.images,t);
+                }
+
+                if(!imageResult){
+                    await t.rollback();
+
+                    return JsonResponse.error(500,"Error al subir imagen.");
                 }
             }
 
