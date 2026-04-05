@@ -83,6 +83,20 @@ export const getRequestDetailForEmployee = async (req: Request, res: Response) =
     }
 }
 
+export const getRequestDetailForStudent = async (req: Request, res: Response) => {
+    try {
+        const params = formatRequest(req);
+        const idRequest = parseInt(params.idRequest);
+
+        const user = await getUserFromJWT(req);
+        const result = await RequestService.getRequestDetailForStudent(user, idRequest);
+        res.status(result.getStatus()).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json(JsonResponse.error(500, "Error Interno del Servidor."));
+    }
+}
+
 export const takeRequestForEmployee = async (req: Request, res: Response) => {
     try {
         const params = formatRequest(req);

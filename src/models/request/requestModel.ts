@@ -4,6 +4,7 @@ import StudentCareer from '../users/studentCareerModel';
 import Employee from '../users/employeeModel';
 import Status from '../asset/statusModel';
 import Student from '../users/studentModel';
+import Discrepancy from './discrepancyModel';
 
 class Request extends Model {
 
@@ -15,6 +16,8 @@ class Request extends Model {
 
   declare getStatus: BelongsToGetAssociationMixin<Status>;
   declare Status : Status;
+
+  declare Discrepancies: Discrepancy[];
 
   async getStudent() : Promise<Student | null> {
     const studentCareer = await StudentCareer.findByPk(this.idStudentCareer);

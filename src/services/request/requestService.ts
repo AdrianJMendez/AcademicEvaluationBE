@@ -444,21 +444,21 @@ class RequestService {
         }
 
         const {count , rows} = await Request.findAndCountAll({
+            distinct: true,
             include: [
                 {model : StudentCareer, required: true, 
-                    where :{
-                        idStudent : student.idStudent,
-                        idCareer : idCareer
-                    },
                     include :[
                         {model: Career, required: true}
-                    ]}
+                    ]},
+                {model: Discrepancy, required:true}
             ],
             where: {
                 [Op.or]: [
                     {idStatus : idStatus},
                     idStatus === 0 ? {idStatus : {[Op.ne]: null}} : {}
-                ]
+                ],
+                "$StudentCareer.idStudent$" : student.idStudent,
+                "$StudentCareer.idCareer$" : idCareer
             },
             order:[
                 ["submittedAt", sort == 0 ? "DESC" : "ASC"],
@@ -590,6 +590,33 @@ class RequestService {
         }
 
         return JsonResponse.success(this.formatEmployeeRequestDetail(request), "La petición ha sido un éxito.");
+    }
+
+    static async getRequestDetailForStudent(user : User, idRequest: number) : Promise<JsonResponse> {
+
+        const student = await user.getStudent();
+        if(!student)
+            return JsonResponse.error(400, "El usuario autenticado no pertenece al estudiantado.");
+
+        const request = await Request.findByPk(idRequest, {
+            include: [
+                {model: Discrepancy, required: true, include :[
+                    {model: Justification, required: false},
+                    {model: DiscrepancyType, required: true}
+                ]},
+                {model: Employee, required: false},
+                {model: Status, required: true},
+                {model: StudentCareer, required: true, include: [
+                    { model: Career, required: true}
+                ]},
+                {model: ScoreCalculation, required: false}
+            ]
+        });
+
+        if(!request)
+            return JsonResponse.error(400,"No se ha encontrado la solicitud");
+
+        return JsonResponse.success(request, "La peticióin se ha completado con éxito.");
     }
 
     static async takeRequestForEmployee(user: User, idRequest: number): Promise<JsonResponse> {
