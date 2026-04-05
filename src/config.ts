@@ -13,6 +13,10 @@ export const config = {
 export const SECRET_KEY = process.env.SECRET_KEY!;
 export const TIME_OUT = process.env.TIME_OUT! as StringValue;
 
+export const IMAGE_REPO_URL = process.env.IMAGE_REPO_URL!;
+export const IMAGE_REPO_PRIVATE_KEY = process.env.IMAGE_REPO_PRIVATE_KEY!;
+export const IMAGE_REPO_PUBLIC_KEY = process.env.IMAGE_REPO_PUBLIC_KEY!;
+
 export const emailConfig = {
     service: 'gmail',
     auth: {

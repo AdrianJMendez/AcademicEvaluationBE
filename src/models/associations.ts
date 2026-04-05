@@ -17,6 +17,7 @@ import EmailVerification from "./asset/emailVerificationModel";
 import StatusType from "./asset/statusTypeModel";
 import CareerSubject from "./academy/careerSubjectModel.ts";
 import JustificationDiscrepancy from "./request/justificationDiscrepancyModel";
+import RequestImage from "./request/requestImageModel";
 
 /********** USERS SCHEMA *********/
 //User
@@ -78,8 +79,6 @@ EmailVerification.belongsTo(Status, { foreignKey: "idStatus", targetKey: "idStat
 EmailVerification.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" });
 
 /********** REQUEST SCHEMA *********/
-//RequestStatus
-
 //DiscrepancyType
 DiscrepancyType.hasMany(Discrepancy, { foreignKey: "idDiscrepancyType", sourceKey: "idDiscrepancyType" });
 
@@ -89,6 +88,10 @@ Request.belongsTo(Employee, { foreignKey: "idEmployeeReviewer", targetKey: "idEm
 Request.belongsTo(Status, {foreignKey:"idStatus", targetKey:"idStatus"});
 Request.hasMany(Discrepancy, { foreignKey: "idRequest", sourceKey: "idRequest" });
 Request.hasOne(ScoreCalculation, { foreignKey: "idRequest", sourceKey: "idRequest" });
+Request.hasMany(RequestImage, {foreignKey:"idRequest", sourceKey:"idRequest"});
+
+//RequestImage
+RequestImage.belongsTo(Request, {foreignKey:"idRequest", targetKey:"idRequest"});
 
 //Discrepancy
 Discrepancy.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
@@ -124,3 +127,4 @@ ScoreCalculation.sync();
 ScoringParameter.sync();
 Status.sync();
 StatusType.sync();
+RequestImage.sync();

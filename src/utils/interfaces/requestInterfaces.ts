@@ -1,3 +1,6 @@
+export interface ImageUploadData {
+    base64Image: string;
+}
 export interface DiscrepancyProp{
     idSubject?: number,
     idDiscrepancyType: number, 
@@ -22,5 +25,6 @@ export interface JustificactionProp {
 export interface RequestRegisterProp {
     idStudentCareer: number,
     discrepancies: DiscrepancyRegisterProp[],
-    justifications?: JustificactionProp[]
+    justifications?: JustificactionProp[],
+    images?: ImageUploadData[]
 }
