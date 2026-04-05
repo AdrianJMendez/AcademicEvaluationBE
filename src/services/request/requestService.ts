@@ -523,18 +523,42 @@ class RequestService {
             return JsonResponse.error(400,"No se ha encontrado el estudiante.");
 
         const pending = await Request.count({
+            distinct: true,
+            include: [
+                {model: StudentCareer, required: true, include: [
+                    {model: Student , required: true, where :{
+                        idStudent : student.idStudent
+                    }}
+                ]}
+            ],
             where :{
                 idStatus : 4
             }
         });
 
         const inReview = await Request.count({
+            distinct: true,
+            include: [
+                {model: StudentCareer, required: true, include: [
+                    {model: Student , required: true, where :{
+                        idStudent : student.idStudent
+                    }}
+                ]}
+            ],
             where :{
                 idStatus : 5
             }
         });
 
         const reviewed = await Request.count({
+            distinct: true,
+            include: [
+                {model: StudentCareer, required: true, include: [
+                    {model: Student , required: true, where :{
+                        idStudent : student.idStudent
+                    }}
+                ]}
+            ],
             where :{
                 idStatus : 6
             }
