@@ -204,37 +204,19 @@ function drawSectionTitle(doc: PdfReportDocument, title: string) {
 function getHonorDecision(finalScore: number | null | undefined) {
   const score = Number(finalScore ?? 0);
 
-  if (score >= 95) {
-    return {
-      status: 'Aprobado',
-      honor: 'Summa Cum Laude',
-      reason: 'La calificacion final se encuentra entre 95% y 100%, por lo que procede el otorgamiento de Summa Cum Laude.',
-      accent: COLORS.success
-    };
-  }
-
-  if (score >= 90) {
-    return {
-      status: 'Aprobado',
-      honor: 'Magna Cum Laude',
-      reason: 'La calificacion final se encuentra entre 90% y 94%, por lo que procede el otorgamiento de Magna Cum Laude.',
-      accent: COLORS.success
-    };
-  }
-
   if (score >= 80) {
     return {
       status: 'Aprobado',
-      honor: 'Cum Laude',
-      reason: 'La calificacion final se encuentra entre 80% y 89%, por lo que procede el otorgamiento de Cum Laude.',
+      honor: 'Apto para recibir mencion honorifica',
+      reason: 'La calificacion final alcanza el umbral institucional minimo de 80%, por lo que la solicitud es apta para recibir mencion honorifica.',
       accent: COLORS.success
     };
   }
 
   return {
     status: 'Denegado',
-    honor: 'Sin honor academico',
-    reason: 'La calificacion final es inferior al minimo institucional de 80%, por lo que la solicitud no califica para recibir honor academico.',
+    honor: 'No apto para recibir mencion honorifica',
+    reason: 'La calificacion final es inferior al minimo institucional de 80%, por lo que la solicitud no es apta para recibir mencion honorifica.',
     accent: COLORS.warning
   };
 }
@@ -274,7 +256,7 @@ function drawCoverPage(doc: PdfReportDocument, detail: any, decision: ReturnType
     .font('Times-Bold')
     .fontSize(18)
     .fillColor(COLORS.ink)
-    .text('Sistema Semi Automatico De Calificacion Para Recibir Honores Academicos', PAGE_MARGIN, 300, {
+    .text('Sistema Semi Automatico De Calificacion Para Mencion Honorifica', PAGE_MARGIN, 300, {
       width: CONTENT_WIDTH,
       align: 'center'
     });
@@ -667,7 +649,7 @@ export async function generateRequestReport(detail: any, scoreSummary: ScoreCalc
     drawSectionTitle(doc, 'Introduccion');
     writeParagraph(
       doc,
-      'El presente informe tecnico documenta el proceso de evaluacion administrativa aplicado a una solicitud de reconocimiento de honor academico. Su finalidad es dejar constancia formal del analisis realizado sobre las discrepancias detectadas en la trayectoria academica del estudiante, las justificaciones presentadas y la calificacion automatica obtenida a partir de la valoracion emitida por el personal evaluador.'
+      'El presente informe tecnico documenta el proceso de evaluacion administrativa aplicado a una solicitud de reconocimiento institucional. Su finalidad es dejar constancia formal del analisis realizado sobre las discrepancias detectadas en la trayectoria academica del estudiante, las justificaciones presentadas y la calificacion automatica obtenida a partir de la valoracion emitida por el personal evaluador.'
     );
     writeParagraph(
       doc,
@@ -714,8 +696,8 @@ export async function generateRequestReport(detail: any, scoreSummary: ScoreCalc
     writeParagraph(
       doc,
       decision.status === 'Aprobado'
-        ? `Con base en la nota final automatica de ${formatScore(detail.finalScore ?? scoreSummary.finalScore)}%, y en virtud de la valoracion emitida sobre las justificaciones asociadas a las discrepancias registradas, se concluye que la solicitud cumple con el umbral institucional para otorgar el honor academico ${decision.honor}.`
-        : `Con base en la nota final automatica de ${formatScore(detail.finalScore ?? scoreSummary.finalScore)}%, y en virtud de la valoracion emitida sobre las justificaciones asociadas a las discrepancias registradas, se concluye que la solicitud no alcanza el umbral institucional minimo de 80% requerido para el otorgamiento de honores academicos.`
+        ? `Con base en la nota final automatica de ${formatScore(detail.finalScore ?? scoreSummary.finalScore)}%, y en virtud de la valoracion emitida sobre las justificaciones asociadas a las discrepancias registradas, se concluye que la solicitud cumple con el umbral institucional para ser considerada apta para recibir mencion honorifica.`
+        : `Con base en la nota final automatica de ${formatScore(detail.finalScore ?? scoreSummary.finalScore)}%, y en virtud de la valoracion emitida sobre las justificaciones asociadas a las discrepancias registradas, se concluye que la solicitud no alcanza el umbral institucional minimo de 80% requerido para ser considerada apta para recibir mencion honorifica.`
     );
     writeParagraph(
       doc,
