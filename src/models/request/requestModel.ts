@@ -5,6 +5,8 @@ import Employee from '../users/employeeModel';
 import Status from '../asset/statusModel';
 import Student from '../users/studentModel';
 import Discrepancy from './discrepancyModel';
+import RequestImage from './requestImageModel';
+import RequestReport from './requestReportModel';
 
 class Request extends Model {
 
@@ -18,6 +20,8 @@ class Request extends Model {
   declare Status : Status;
 
   declare Discrepancies: Discrepancy[];
+  declare RequestImages: RequestImage[];
+  declare RequestReport: RequestReport;
 
   async getStudent() : Promise<Student | null> {
     const studentCareer = await StudentCareer.findByPk(this.idStudentCareer);

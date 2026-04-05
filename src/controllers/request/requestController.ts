@@ -83,6 +83,24 @@ export const getRequestDetailForEmployee = async (req: Request, res: Response) =
     }
 }
 
+export const getRequestImagesForEmployee = async (req: Request, res: Response) => {
+    try {
+        const params = formatRequest(req);
+        const idRequest = Number(params.idRequest);
+
+        if (Number.isNaN(idRequest) || idRequest <= 0) {
+            return res.status(400).json(JsonResponse.error(400, "El id de solicitud no es vÃ¡lido."));
+        }
+
+        const user = await getUserFromJWT(req);
+        const result = await RequestService.getRequestImagesForEmployee(user, idRequest);
+        res.status(result.getStatus()).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json(JsonResponse.error(500, "Error Interno del Servidor."));
+    }
+}
+
 export const getRequestDetailForStudent = async (req: Request, res: Response) => {
     try {
         const params = formatRequest(req);
@@ -127,6 +145,49 @@ export const finishReviewForEmployee = async (req: Request, res: Response) => {
         const user = await getUserFromJWT(req);
         const result = await RequestService.finishReviewForEmployee(user, idRequest, params);
         res.status(result.getStatus()).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json(JsonResponse.error(500, "Error Interno del Servidor."));
+    }
+}
+
+export const generateReportForEmployee = async (req: Request, res: Response) => {
+    try {
+        const params = formatRequest(req);
+        const idRequest = Number(params.idRequest);
+
+        if (Number.isNaN(idRequest) || idRequest <= 0) {
+            return res.status(400).json(JsonResponse.error(400, "El id de solicitud no es vÃ¡lido."));
+        }
+
+        const user = await getUserFromJWT(req);
+        const result = await RequestService.generateReportForEmployee(user, idRequest);
+        res.status(result.getStatus()).json(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json(JsonResponse.error(500, "Error Interno del Servidor."));
+    }
+}
+
+export const downloadReportForEmployee = async (req: Request, res: Response) => {
+    try {
+        const params = formatRequest(req);
+        const idRequest = Number(params.idRequest);
+
+        if (Number.isNaN(idRequest) || idRequest <= 0) {
+            return res.status(400).json(JsonResponse.error(400, "El id de solicitud no es vÃ¡lido."));
+        }
+
+        const user = await getUserFromJWT(req);
+        const result = await RequestService.getStoredReportForEmployee(user, idRequest);
+
+        if (result instanceof JsonResponse) {
+            return res.status(result.getStatus()).json(result);
+        }
+
+        res.setHeader('Content-Type', result.mimeType);
+        res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+        return res.status(200).send(result.reportData);
     } catch (error) {
         console.log(error);
         res.status(500).json(JsonResponse.error(500, "Error Interno del Servidor."));

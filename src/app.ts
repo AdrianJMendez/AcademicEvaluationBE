@@ -14,7 +14,6 @@ app.use(cors({
   exposedHeaders: ["Authorization"]
 }));
 
-
 app.get("/", (req: Request, res: Response) => {
   res.sendStatus(401);
 });
