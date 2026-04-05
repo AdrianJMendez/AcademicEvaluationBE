@@ -12,6 +12,8 @@ import Discrepancy from "./request/discrepancyModel";
 import Justification from "./request/justificationModel";
 import ScoreCalculation from "./request/scoreCalculationModel";
 import ScoringParameter from "./request/scoringParameterModel";
+import RequestImage from "./request/requestImageModel";
+import RequestReport from "./request/requestReportModel";
 import Status from "./asset/statusModel";
 import EmailVerification from "./asset/emailVerificationModel";
 import StatusType from "./asset/statusTypeModel";
@@ -78,8 +80,6 @@ EmailVerification.belongsTo(Status, { foreignKey: "idStatus", targetKey: "idStat
 EmailVerification.belongsTo(User, { foreignKey: "idUser", targetKey: "idUser" });
 
 /********** REQUEST SCHEMA *********/
-//RequestStatus
-
 //DiscrepancyType
 DiscrepancyType.hasMany(Discrepancy, { foreignKey: "idDiscrepancyType", sourceKey: "idDiscrepancyType" });
 
@@ -89,6 +89,14 @@ Request.belongsTo(Employee, { foreignKey: "idEmployeeReviewer", targetKey: "idEm
 Request.belongsTo(Status, {foreignKey:"idStatus", targetKey:"idStatus"});
 Request.hasMany(Discrepancy, { foreignKey: "idRequest", sourceKey: "idRequest" });
 Request.hasOne(ScoreCalculation, { foreignKey: "idRequest", sourceKey: "idRequest" });
+Request.hasMany(RequestImage, { foreignKey: "idRequest", sourceKey: "idRequest" });
+Request.hasOne(RequestReport, { foreignKey: "idRequest", sourceKey: "idRequest" });
+
+//RequestImage
+RequestImage.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
+
+//RequestReport
+RequestReport.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
 
 //Discrepancy
 Discrepancy.belongsTo(Request, { foreignKey: "idRequest", targetKey: "idRequest" });
@@ -121,6 +129,9 @@ Request.sync();
 Discrepancy.sync();
 Justification.sync();
 ScoreCalculation.sync();
+RequestImage.sync();
+RequestReport.sync();
 ScoringParameter.sync();
 Status.sync();
 StatusType.sync();
+RequestImage.sync();

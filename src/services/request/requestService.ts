@@ -14,6 +14,14 @@ import Justification from "../../models/request/justificationModel";
 import DiscrepancyType from "../../models/request/discrepancyTypeModel";
 import ScoreCalculation from "../../models/request/scoreCalculationModel";
 import ScoringParameter from "../../models/request/scoringParameterModel";
+import RequestImage from "../../models/request/requestImageModel";
+import RequestReport from "../../models/request/requestReportModel";
+import { RequestRegisterProp } from '../../utils/interfaces/requestInterfaces';
+import { title } from 'process';
+import JustificationDiscrepancy from '../../models/request/justificationDiscrepancyModel';
+import RequestImageService from './requestImageService';
+import { generateRequestReport } from '../../utils/reportGenerator';
+import { calculateRequestScore, DEFAULT_SCORING, ScoringConfig } from '../../utils/requestScoring';
 
 type EmployeeRequestStatus = 'pending' | 'in-review' | 'reviewed' | 'all';
 
@@ -28,29 +36,11 @@ interface ReviewRequestPayload {
     notes?: string;
 }
 
-interface ScoringConfig {
-    baseScore: number;
-    delayPenaltyPerPeriod: number;
-    maxDelayPenalty: number;
-    noImpactAdjustment: number;
-    lowImpactAdjustment: number;
-    highImpactAdjustment: number;
-}
-
 class RequestService {
 
     private static readonly REQUEST_STATUS_TYPE = 'REQUEST';
     private static readonly DEFAULT_EMPLOYEE_PAGE_SIZE = 6;
     private static readonly MAX_EMPLOYEE_PAGE_SIZE = 20;
-
-    private static readonly DEFAULT_SCORING: ScoringConfig = {
-        baseScore: 100,
-        delayPenaltyPerPeriod: 2,
-        maxDelayPenalty: 30,
-        noImpactAdjustment: -5,
-        lowImpactAdjustment: -3,
-        highImpactAdjustment: 5
-    };
 
     private static async getEmployeeProfile(user: User): Promise<Employee | null> {
         return Employee.findOne({
@@ -132,6 +122,15 @@ class RequestService {
             {
                 model: ScoreCalculation,
                 required: false
+            },
+            {
+                model: RequestImage,
+                required: false
+            },
+            {
+                model: RequestReport,
+                required: false,
+                attributes: ['idRequestReport', 'fileName', 'mimeType', 'generatedAt']
             }
         ];
     }
@@ -189,6 +188,15 @@ class RequestService {
             {
                 model: ScoreCalculation,
                 required: false
+            },
+            {
+                model: RequestImage,
+                required: false
+            },
+            {
+                model: RequestReport,
+                required: false,
+                attributes: ['idRequestReport', 'fileName', 'mimeType', 'generatedAt']
             }
         ];
     }
@@ -242,6 +250,12 @@ class RequestService {
                 name: reviewer.User?.name ?? null,
                 email: reviewer.User?.email ?? null
             } : null,
+            generatedReport: data.RequestReport ? {
+                idRequestReport: data.RequestReport.idRequestReport,
+                fileName: data.RequestReport.fileName,
+                mimeType: data.RequestReport.mimeType,
+                generatedAt: data.RequestReport.generatedAt
+            } : null,
             discrepancyCount: discrepancies.length,
             justificationCount: uniqueJustifications.length
         };
@@ -257,7 +271,7 @@ class RequestService {
             submittedAt: data.submittedAt,
             reviewedAt: data.reviewedAt,
             finalScore: data.finalScore,
-            generatedReportUrl: data.generatedReportUrl,
+            generatedReportUrl: null,
             notes: data.notes,
             status: data.Status ? {
                 idStatus: data.Status.idStatus,
@@ -309,6 +323,18 @@ class RequestService {
                     reviewedAt: justification.reviewedAt
                 }))
             })),
+            requestImages: (data.RequestImages ?? []).map((image: any) => ({
+                idRequestImage: image.idRequestImage,
+                imageName: image.imageName,
+                thumbnailUrl: image.thumbnailUrl,
+                imageUrl: image.imageUrl
+            })),
+            generatedReport: data.RequestReport ? {
+                idRequestReport: data.RequestReport.idRequestReport,
+                fileName: data.RequestReport.fileName,
+                mimeType: data.RequestReport.mimeType,
+                generatedAt: data.RequestReport.generatedAt
+            } : null,
             scoreCalculation: data.ScoreCalculation ? {
                 idScoreCalculation: data.ScoreCalculation.idScoreCalculation,
                 baseScore: Number(data.ScoreCalculation.baseScore),
@@ -323,7 +349,7 @@ class RequestService {
     }
 
     private static async getScoringConfig(): Promise<ScoringConfig> {
-        const config = { ...this.DEFAULT_SCORING };
+        const config = { ...DEFAULT_SCORING };
         const parameters = await ScoringParameter.findAll({
             where: {
                 isActive: true
@@ -352,57 +378,71 @@ class RequestService {
                 case 'high_impact_adjustment':
                     config.highImpactAdjustment = value;
                     break;
+                case 'discrepancy_penalty_per_item':
+                    config.discrepancyPenaltyPerItem = value;
+                    break;
+                case 'max_discrepancy_penalty':
+                    config.maxDiscrepancyPenalty = value;
+                    break;
+                case 'missing_justification_penalty':
+                    config.missingJustificationPenalty = value;
+                    break;
+                case 'positive_impact_cap':
+                    config.positiveImpactCap = value;
+                    break;
+                case 'low_impact_factor':
+                    config.lowImpactFactor = value;
+                    break;
+                case 'high_impact_factor':
+                    config.highImpactFactor = value;
+                    break;
             }
         }
 
         return config;
     }
 
-    private static calculateReviewScore(discrepancies: any[], scoringConfig: ScoringConfig) {
-        const totalDelay = discrepancies.reduce((total, discrepancy) => {
-            const expectedPeriod = Number(discrepancy.expectedPeriod ?? 0);
-            const actualPeriod = Number(discrepancy.actualPeriod ?? 0);
-            return total + Math.max(0, actualPeriod - expectedPeriod);
-        }, 0);
-
-        const delayPenalty = Math.min(
-            totalDelay * scoringConfig.delayPenaltyPerPeriod,
-            scoringConfig.maxDelayPenalty
-        );
-
-        const uniqueJustifications = this.getUniqueJustificationsFromDiscrepancies(discrepancies);
-
-        const impactAdjustment = uniqueJustifications.reduce((total: number, justification: any) => {
-            switch (justification.impactLevel) {
-                case 'high-impact':
-                    return total + scoringConfig.highImpactAdjustment;
-                case 'low-impact':
-                    return total + scoringConfig.lowImpactAdjustment;
-                case 'no-impact':
-                    return total + scoringConfig.noImpactAdjustment;
-                default:
-                    return total;
-            }
-        }, 0);
-
-        const finalScore = Math.max(
-            0,
-            Math.min(100, scoringConfig.baseScore - delayPenalty + impactAdjustment)
-        );
-
-        return {
-            baseScore: scoringConfig.baseScore,
-            totalDelay,
-            delayPenalty,
-            impactAdjustment,
-            finalScore: Number(finalScore.toFixed(2)),
-            discrepanciesCount: discrepancies.length
-        };
-    }
-
     private static async findRequestForEmployee(idRequest: number, transaction?: Transaction) {
         return Request.findByPk(idRequest, {
             include: this.getEmployeeDetailInclude(),
+            transaction
+        });
+    }
+
+    private static async saveRequestReport(
+        idRequest: number,
+        report: Awaited<ReturnType<typeof generateRequestReport>>,
+        transaction?: Transaction
+    ) {
+        const currentReport = await RequestReport.findOne({
+            where: {
+                idRequest
+            },
+            transaction
+        });
+
+        if (currentReport) {
+            await RequestReport.update({
+                fileName: report.fileName,
+                mimeType: report.mimeType,
+                reportData: report.buffer,
+                generatedAt: new Date()
+            }, {
+                where: {
+                    idRequest
+                },
+                transaction
+            });
+            return;
+        }
+
+        await RequestReport.create({
+            idRequest,
+            fileName: report.fileName,
+            mimeType: report.mimeType,
+            reportData: report.buffer,
+            generatedAt: new Date()
+        }, {
             transaction
         });
     }
@@ -441,21 +481,21 @@ class RequestService {
         }
 
         const {count , rows} = await Request.findAndCountAll({
+            distinct: true,
             include: [
                 {model : StudentCareer, required: true, 
-                    where :{
-                        idStudent : student.idStudent,
-                        idCareer : idCareer
-                    },
                     include :[
                         {model: Career, required: true}
-                    ]}
+                    ]},
+                {model: Discrepancy, required:true}
             ],
             where: {
                 [Op.or]: [
                     {idStatus : idStatus},
                     idStatus === 0 ? {idStatus : {[Op.ne]: null}} : {}
-                ]
+                ],
+                "$StudentCareer.idStudent$" : student.idStudent,
+                "$StudentCareer.idCareer$" : idCareer
             },
             order:[
                 ["submittedAt", sort == 0 ? "DESC" : "ASC"],
@@ -587,6 +627,140 @@ class RequestService {
         }
 
         return JsonResponse.success(this.formatEmployeeRequestDetail(request), "La petición ha sido un éxito.");
+    }
+
+    static async getRequestImagesForEmployee(user: User, idRequest: number): Promise<JsonResponse> {
+        const employee = await this.getEmployeeProfile(user);
+
+        if (!employee) {
+            return JsonResponse.error(403, "El usuario autenticado no pertenece al personal evaluador.");
+        }
+
+        const request = await Request.findByPk(idRequest, {
+            include: [
+                {
+                    model: RequestImage,
+                    required: false
+                }
+            ]
+        });
+
+        if (!request) {
+            return JsonResponse.error(404, "No se ha encontrado la solicitud.");
+        }
+
+        const data = request.toJSON() as any;
+        return JsonResponse.success(
+            (data.RequestImages ?? []).map((image: any) => ({
+                idRequestImage: image.idRequestImage,
+                imageName: image.imageName,
+                thumbnailUrl: image.thumbnailUrl,
+                imageUrl: image.imageUrl
+            })),
+            "La petición ha sido un éxito."
+        );
+    }
+
+    static async generateReportForEmployee(user: User, idRequest: number): Promise<JsonResponse> {
+        const employee = await this.getEmployeeProfile(user);
+
+        if (!employee) {
+            return JsonResponse.error(403, "El usuario autenticado no pertenece al personal evaluador.");
+        }
+
+        const request = await this.findRequestForEmployee(idRequest);
+
+        if (!request) {
+            return JsonResponse.error(404, "No se ha encontrado la solicitud.");
+        }
+
+        const reviewedStatus = await this.getRequestStatus('reviewed');
+
+        if (!reviewedStatus || request.idStatus !== reviewedStatus.idStatus) {
+            return JsonResponse.error(409, "El informe solo puede generarse cuando la solicitud ya fue revisada.");
+        }
+
+        const scoringConfig = await this.getScoringConfig();
+        const scoreSummary = calculateRequestScore((request.toJSON() as any).Discrepancies ?? [], scoringConfig);
+        const report = await generateRequestReport(this.formatEmployeeRequestDetail(request), scoreSummary);
+        await this.saveRequestReport(request.idRequest, report);
+
+        const updatedRequest = await this.findRequestForEmployee(idRequest);
+
+        if (!updatedRequest) {
+            return JsonResponse.error(404, "No se pudo recuperar la solicitud con el informe generado.");
+        }
+
+        return JsonResponse.success(
+            this.formatEmployeeRequestDetail(updatedRequest),
+            "El informe se ha generado con Ã©xito."
+        );
+    }
+
+    static async getStoredReportForEmployee(user: User, idRequest: number): Promise<JsonResponse | {
+        fileName: string;
+        mimeType: string;
+        reportData: Buffer;
+    }> {
+        const employee = await this.getEmployeeProfile(user);
+
+        if (!employee) {
+            return JsonResponse.error(403, "El usuario autenticado no pertenece al personal evaluador.");
+        }
+
+        const request = await Request.findByPk(idRequest, {
+            include: [
+                {
+                    model: RequestReport,
+                    required: false
+                }
+            ]
+        });
+
+        if (!request) {
+            return JsonResponse.error(404, "No se ha encontrado la solicitud.");
+        }
+
+        const data = request.toJSON() as any;
+        const storedReport = data.RequestReport;
+
+        if (!storedReport?.reportData) {
+            return JsonResponse.error(404, "La solicitud todavia no cuenta con un informe generado.");
+        }
+
+        return {
+            fileName: storedReport.fileName ?? `solicitud-${idRequest}-informe.pdf`,
+            mimeType: storedReport.mimeType ?? 'application/pdf',
+            reportData: storedReport.reportData
+        };
+    }
+
+    static async getRequestDetailForStudent(user : User, idRequest: number) : Promise<JsonResponse> {
+
+        const student = await user.getStudent();
+        if(!student)
+            return JsonResponse.error(400, "El usuario autenticado no pertenece al estudiantado.");
+
+        const request = await Request.findByPk(idRequest, {
+            include: [
+                {model: Discrepancy, required: true, include :[
+                    {model: Justification, required: false},
+                    {model: DiscrepancyType, required: true}
+                ]},
+                {model: Employee, required: false},
+                {model: Status, required: true},
+                {model: StudentCareer, required: true, include: [
+                    { model: Career, required: true}
+                ]},
+                {model: ScoreCalculation, required: false},
+                {model: RequestImage, required: false}
+            ]
+        });
+
+        if(!request)
+            return JsonResponse.error(400,"No se ha encontrado la solicitud");
+
+        return JsonResponse.success(request, "La peticióin se ha completado con éxito.");
     }
 
     static async takeRequestForEmployee(user: User, idRequest: number): Promise<JsonResponse> {
@@ -740,7 +914,7 @@ class RequestService {
             const refreshedData = refreshedRequest.toJSON() as any;
             const refreshedDiscrepancies = refreshedData.Discrepancies ?? [];
             const scoringConfig = await this.getScoringConfig();
-            const score = this.calculateReviewScore(refreshedDiscrepancies, scoringConfig);
+            const score = calculateRequestScore(refreshedDiscrepancies, scoringConfig);
             const reviewDate = new Date();
 
             const currentScoreCalculation = refreshedData.ScoreCalculation ?? null;
@@ -787,6 +961,16 @@ class RequestService {
                 transaction
             });
 
+            const reportRequest = await this.findRequestForEmployee(idRequest, transaction);
+
+            if (!reportRequest) {
+                await transaction.rollback();
+                return JsonResponse.error(404, "No se pudo preparar la solicitud para generar el informe.");
+            }
+
+            const report = await generateRequestReport(this.formatEmployeeRequestDetail(reportRequest), score);
+            await this.saveRequestReport(refreshedRequest.idRequest, report, transaction);
+
             await transaction.commit();
 
             const finalizedRequest = await this.findRequestForEmployee(idRequest);
@@ -805,6 +989,126 @@ class RequestService {
             return JsonResponse.error(500, "Error al finalizar la revisión de la solicitud.");
         }
     }
+
+    static async createRequest(user: User, prop: RequestRegisterProp): Promise<JsonResponse>{
+        const studentFromUser = await user.getStudent();
+
+        if(!studentFromUser)
+            return JsonResponse.error(500,"El usuario registrado no es un estudiante.");
+
+        const studentCareer = await StudentCareer.findByPk(prop.idStudentCareer);
+
+        if(studentFromUser.idStudent != studentCareer?.idStudent)
+            return JsonResponse.error(500,"La carrera ingresada no pertenece al estudiante registrado.");
+
+        let hasDiscrepancies = prop.discrepancies.find((d)=>d.type != 'Observacion');
+        if(hasDiscrepancies && !prop.justifications)
+            return JsonResponse.error(500,"Existen discrepancias que requieren justificacion, y estas no existen.");
+
+        const t = await sequelize.transaction();
+        try{   
+
+            const newRequest = await Request.create({
+                idStatus : 4,   ///Request Pendiente
+                idStudentCareer: prop.idStudentCareer
+            },{
+                transaction: t
+            });
+
+            const discrepancyIndexes : Array<{idDiscrepancy:number,idProp:number}> = [];
+            for(let i = 0; i < prop.discrepancies.length; i++){
+
+                const discrepancyProp = prop.discrepancies[i];
+
+                let discrepancyType = discrepancyProp.type == "Retraso" ? 1 :
+                discrepancyProp.type == "Baja carga académica" ? 2:
+                discrepancyProp.type == "Observacion" ? 3 : 4;
+
+                console.log(discrepancyType);
+
+                const newDiscrepancy = await Discrepancy.create({
+                    idRequest: newRequest.idRequest,
+                    idDiscrepancyType: discrepancyType,
+                    description: discrepancyProp.description,
+                    severity: discrepancyProp.severity
+                },{
+                    transaction: t
+                });
+
+                discrepancyIndexes.push({
+                    idDiscrepancy: newDiscrepancy.idDiscrepancy,
+                    idProp: i
+                });
+            }
+
+            if(prop.justifications){
+
+                const justificationIndexes : Array<{idJustification:number, idProp: number}>  = [];
+
+                for(let i = 0; i < prop.justifications.length; i++){
+
+                    const newJustification = await Justification.create({
+                        title: prop.justifications[i].title,
+                        description : prop.justifications[i].description
+                    },{
+                        transaction: t
+                    });
+
+                    justificationIndexes.push({
+                        idJustification: newJustification.idJustification,
+                        idProp: i
+                    });
+                }
+
+                for(let i = 0; i < prop.justifications.length; i++){
+
+                    let idJustification = justificationIndexes.find((ji)=>ji.idProp == i)?.idJustification;
+
+                    await JustificationDiscrepancy.bulkCreate(
+
+                        prop.justifications[i].discrepancyProps.map((discrepancyProp) => {
+
+                            let idDiscrepancy = discrepancyIndexes.find((di)=>di.idProp == discrepancyProp)?.idDiscrepancy;
+                            return {
+                                idDiscrepancy,
+                                idJustification
+                            }
+                        })
+                    ,{
+                        transaction:t
+                    })
+                }
+            }
+
+            //Subir imagenes si existen
+            if(prop.images){
+
+                var imageResult;
+
+                if(prop.images.length == 1){
+                    imageResult = await RequestImageService.uploadRequestmage(newRequest,prop.images[0],t);
+                }else{
+                    imageResult = await RequestImageService.uploadMultipleRequestImages(newRequest,prop.images,t);
+                }
+
+                if(!imageResult){
+                    await t.rollback();
+
+                    return JsonResponse.error(500,"Error al subir imagen.");
+                }
+            }
+
+            await t.commit();
+
+            return JsonResponse.success(newRequest,"La petición se ha registrado con éxito.");
+
+        }catch(err){
+            console.log(err);
+            await t.rollback();
+            return JsonResponse.error(500,"Ha ocurrido un error al crear la solicitud.");
+        }
+    }
+
 }
 
 export default RequestService;
