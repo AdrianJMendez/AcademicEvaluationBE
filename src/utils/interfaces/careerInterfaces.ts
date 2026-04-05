@@ -2,7 +2,9 @@ export interface ParsedSubject {
     subjectCode: string,
     subjectName?: string,
     period: number, 
-    year: number
+    year: number,
+    credits: number,
+    score: number
 }
 
 export interface CareerComparationProp{
