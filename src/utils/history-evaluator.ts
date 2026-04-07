@@ -1,3 +1,4 @@
+import Career from "../models/academy/careerModel";
 import { DiscrepancyProp, ParsedSubject, PrimarySubject } from "./interfaces/careerInterfaces";
 
 /**
@@ -57,9 +58,10 @@ function getCurrentNormalizedPeriod(history: ParsedSubject[], yearMap: Map<numbe
 }
 
 /**
- * Checks whether the student has already completed the entire curriculum.
+ * Revisar si el estudiante completo el plan de estudios
  */
 function isCurriculumCompleted(
+    career: Career,
     subjectsMap: Map<string, PrimarySubject>,
     completedSubjects: Set<string>,
     completedOptativesCount: number,
@@ -72,13 +74,14 @@ function isCurriculumCompleted(
             }
         }
     }
-    return completedOptativesCount >= 3 && completedElectivesCount >= 3;
+    return completedOptativesCount >= career.optativesQty && completedElectivesCount >= career.electivesQty;
 }
 
 /**
  * Feasibility check: can the student finish all remaining subjects by period 15.
  */
 function canCompleteOnTime(
+    career: Career,
     subjectsMap: Map<string, PrimarySubject>,
     completedSubjects: Set<string>,
     completedOptativesCount: number,
@@ -86,8 +89,8 @@ function canCompleteOnTime(
     currentAbsolutePeriod: number
 ): boolean {
     const pendingSubjects: PrimarySubject[] = [];
-    let neededOptatives = Math.max(0, 3 - completedOptativesCount);
-    let neededElectives = Math.max(0, 3 - completedElectivesCount);
+    let neededOptatives = Math.max(0, career.optativesQty - completedOptativesCount);
+    let neededElectives = Math.max(0, career.electivesQty - completedElectivesCount);
 
     for (const subject of subjectsMap.values()) {
         if (completedSubjects.has(subject.subjectCode)) continue;
@@ -131,7 +134,7 @@ function canCompleteOnTime(
     let scheduled = new Set<string>();
     let remaining = [...pendingSubjects];
     let period = currentAbsolutePeriod + 1;
-    const MAX_PERIOD = 15;
+    const MAX_PERIOD = career.totalPeriods;
 
     while (remaining.length > 0 && period <= MAX_PERIOD) {
         const canTake: PrimarySubject[] = [];
@@ -176,7 +179,7 @@ function checkMissingPrerequisites(
         const subject = subjectsMap.get(historyEntry.subjectCode);
         if (!subject) continue;
         
-        // Check if subject has prerequisites
+        
         if (subject.prerequisites && subject.prerequisites.length > 0) {
             for (const prereq of subject.prerequisites) {
                 // Check if prerequisite was completed BEFORE this subject was taken
@@ -184,11 +187,9 @@ function checkMissingPrerequisites(
                 const currentSubjectPeriod = lastCompletionPeriod.get(historyEntry.subjectCode);
 
                 if (!prereqCompletionPeriod) {
-                    // Prerequisite never completed
                     violations.push(`"${subject.subjectName}" requiere "${prereq.subjectName}" que nunca fue cursada`);
                 } else if (currentSubjectPeriod && prereqCompletionPeriod > currentSubjectPeriod) {
-                    // Prerequisite was completed after the subject (should be impossible in valid history,
-                    // but could happen if data is inconsistent)
+                    //Validar si una asignatura fue cursada antes que su requisito
                     violations.push(`"${subject.subjectName}" fue cursada antes que su requisito "${prereq.subjectName}"`);
                 }
             }
@@ -237,7 +238,7 @@ function validateHistory(
 }
 
 /**
- * Groups discrepancies by type and similar descriptions.
+ * Agrupar discrepancias
  */
 function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[] {
     const grouped: DiscrepancyProp[] = [];
@@ -342,7 +343,7 @@ function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[]
         });
     }
     
-    // Add retrasoPrereq as individual items (each is unique and important)
+    // Add retrasoPrereq as individual items
     for (const disc of retrasoPrereq) {
         grouped.push({
             type: "Retraso",
@@ -368,7 +369,8 @@ function groupDiscrepancies(discrepancies: DiscrepancyProp[]): DiscrepancyProp[]
  */
 export function analyzeCurriculum(
     primarySubjects: PrimarySubject[],
-    history: ParsedSubject[]
+    history: ParsedSubject[],
+    career : Career
 ): DiscrepancyProp[] {
     const discrepancies: DiscrepancyProp[] = [];
 
@@ -435,8 +437,8 @@ export function analyzeCurriculum(
     }
     
 
-    // 1. Check if curriculum is already completed
-    if (isCurriculumCompleted(subjectsMap, completedSubjects, completedOptatives, completedElectives)) {
+    // 1. REVISAR SI EL PLAN YA FUE COMPLETADO
+    if (isCurriculumCompleted(career,subjectsMap, completedSubjects, completedOptatives, completedElectives)) {
         return [{
             type: "Observacion",
             description: "El plan de estudios fue completado a tiempo.",
@@ -444,9 +446,10 @@ export function analyzeCurriculum(
         }];
     }
 
-    // 2. Check if student can still finish on time
+    // 2. REVISAR SI SE PUEDE COMPLETAR A TIEMPO
     const currentPeriod = getCurrentNormalizedPeriod(history, yearMap);
     const canFinish = canCompleteOnTime(
+        career,
         subjectsMap,
         completedSubjects,
         completedOptatives,
@@ -462,8 +465,8 @@ export function analyzeCurriculum(
         }];
     }
 
-    // 3. Not on time -> find discrepancies
-    const maxPeriodToCheck = Math.max(currentPeriod, 15);
+    // 3. REVISAR DISCREPANCIAS
+    const maxPeriodToCheck = Math.max(currentPeriod, career.totalPeriods);
     const reportedEmptyPeriods = new Set<number>();
 
     for (let absPeriod = 1; absPeriod <= maxPeriodToCheck; absPeriod++) {
@@ -491,7 +494,7 @@ export function analyzeCurriculum(
         }
     }
 
-    // Check for delays caused by failing prerequisites
+    //REVISAR RETRASOS CAUSADOS POR LOS REQUISITOS TARDES
     for (const [subjectCode, completionPeriod] of lastCompletionPeriod.entries()) {
         const subject = subjectsMap.get(subjectCode);
         if (!subject || subject.isElective) continue;
@@ -528,7 +531,7 @@ export function analyzeCurriculum(
         }
     }
 
-    // Check for pending subjects that are already late
+    //REVISAR ASIGNATURAS QUE YA ESTAN TARDE
     for (const subject of primarySubjects) {
         if (completedSubjects.has(subject.subjectCode)) continue;
         if (subject.isElective) continue;
@@ -543,7 +546,7 @@ export function analyzeCurriculum(
         }
     }
 
-    // Group similar discrepancies
+    //AGRUPAR 
     const groupedDiscrepancies = groupDiscrepancies(discrepancies);
     
     return groupedDiscrepancies;
