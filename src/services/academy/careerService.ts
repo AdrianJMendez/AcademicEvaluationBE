@@ -140,7 +140,7 @@ class CareerService {
             }
         });
 
-        const discrepanciesFound = analyzeCurriculum(mappedSubjects,prop.history);
+        const discrepanciesFound = analyzeCurriculum(mappedSubjects,prop.history, career);
 
         return JsonResponse.success(discrepanciesFound,"La petición se ha realizado con éxito.");
     }
