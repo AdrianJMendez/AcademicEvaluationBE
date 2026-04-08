@@ -14,7 +14,7 @@ index.use('/auth', authRoutes);
 
 index.use('/public', publicRoutes);
 
-//index.use(verifyToken);
+index.use(verifyToken);
 
 index.use('/users', usersRoutes);
 
